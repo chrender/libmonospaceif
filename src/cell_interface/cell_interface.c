@@ -654,6 +654,7 @@ static void z_ucs_output_refresh_destination(z_ucs *z_ucs_output,
           break;
       }
 
+      buf = 0;
       if (output_end != NULL)
       {
         TRACE_LOG("Found newline at end of output.\n");
@@ -669,7 +670,7 @@ static void z_ucs_output_refresh_destination(z_ucs *z_ucs_output,
           z_ucs_output,
           (void*)(&z_windows[0]->window_number));
 
-      if (output_end != NULL)
+      if (buf != 0)
         *output_end = buf;
     }
   }
@@ -1842,8 +1843,8 @@ static void refresh_screen()
 // Returns -1 when int routine returns != 0
 // Returns -2 when user ended input with ESC
 static int16_t read_line(zscii *dest, uint16_t maximum_length,
-    uint16_t UNUSED(tenth_seconds), uint32_t UNUSED(verification_routine),
-    uint8_t preloaded_input, int *UNUSED(tenth_seconds_elapsed),
+    uint16_t tenth_seconds, uint32_t verification_routine,
+    uint8_t preloaded_input, int *tenth_seconds_elapsed,
     bool UNUSED(disable_command_history), bool UNUSED(return_on_escape))
 {
   z_ucs input, buf;
@@ -1862,6 +1863,8 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
   int cmd_history_index = 0, cmd_index;
   zscii *cmd_history_ptr;
   int return_code;
+  int current_tenth_seconds = 0;
+  int timed_routine_retval;
 
   current_input_size = &input_size;
   current_input_scroll_x = &input_scroll_x;
@@ -1888,6 +1891,24 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
   TRACE_LOG("Flush finished.\n");
 
   timeout_millis = (is_timed_keyboard_input_available() == true ? 100 : 0);
+
+  TRACE_LOG("1/10s: %d, routine: %d.\n",
+      tenth_seconds, verification_routine);
+
+  if ((tenth_seconds != 0) && (verification_routine != 0))
+  {
+    TRACE_LOG("timed input in read_line every %d tenth seconds.\n",
+        tenth_seconds);
+
+    timed_input_active = true;
+
+    timeout_millis = (is_timed_keyboard_input_available() == true ? 100 : 0);
+
+    if (tenth_seconds_elapsed != NULL)
+      *tenth_seconds_elapsed = 0;
+  }
+  else
+    timed_input_active = false;
 
   screen_cell_interface->update_screen();
   update_output_colours(active_z_window_id);
@@ -1926,8 +1947,53 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
 
     if (event_type == EVENT_WAS_TIMEOUT)
     {
-      TRACE_LOG("timeout.\n");
       // Don't forget to restore current_input_buffer on recursive read.
+      TRACE_LOG("timeout found.\n");
+
+      if (timed_input_active == true)
+      {
+        current_tenth_seconds++;
+        TRACE_LOG("%d / %d.\n", current_tenth_seconds, tenth_seconds);
+        if (tenth_seconds_elapsed != NULL)
+          (*tenth_seconds_elapsed)++;
+
+        if (current_tenth_seconds == tenth_seconds)
+        {
+          current_tenth_seconds = 0;
+          stream_output_has_occured = false;
+
+          TRACE_LOG("calling timed-input-routine at %x.\n",
+              verification_routine);
+          timed_routine_retval = interpret_from_call(verification_routine);
+          TRACE_LOG("timed-input-routine finished.\n");
+
+          if (terminate_interpreter != INTERPRETER_QUIT_NONE)
+          {
+            TRACE_LOG("Quitting after verification.\n");
+            input_in_progress = false;
+            input_size = 0;
+          }
+          else
+          {
+            if (stream_output_has_occured == true)
+            {
+              flush_all_buffered_windows();
+              refresh_input_line();
+              z_windows[active_z_window_id]->xcursorpos
+                = *current_input_size > *current_input_display_width
+                ? *current_input_x + *current_input_display_width
+                : *current_input_x + *current_input_size;
+              screen_cell_interface->update_screen();
+            }
+
+            if (timed_routine_retval != 0)
+            {
+              input_in_progress = false;
+              input_size = 0;
+            }
+          }
+        }
+      }
     }
     else if (
         (event_type == EVENT_WAS_CODE_PAGE_UP)
