@@ -1,0 +1,4 @@
+Mehr
+Punkte
+Züge
+libcellinterface version \{0s}.
