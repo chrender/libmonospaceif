@@ -36,7 +36,7 @@
 #define i18n_libcellif_MORE_PROMPT 0
 #define i18n_libcellif_SCORE 1
 #define i18n_libcellif_TURNS 2
-#define i18n_libcellif_LIBCELLINTERFACE_VERRSION_P0S 3
+#define i18n_libcellif_LIBCELLINTERFACE_VERSION_P0S 3
 
 extern z_ucs libcellif_module_name[];
 

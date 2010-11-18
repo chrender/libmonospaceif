@@ -33,7 +33,7 @@
 #ifndef cellscreen_h_INCLUDED
 #define cellscreen_h_INCLUDED
 
-#define LIBCELLINTERFACE_VERSION "0.7.0-b7"
+#define LIBCELLINTERFACE_VERSION "0.7.0-b8"
 
 #include "../screen_interface/screen_cell_interface.h"
 
@@ -45,6 +45,7 @@ void fizmo_register_screen_cell_interface(struct z_screen_cell_interface
 void new_cell_screen_size(int newysize, int newxsize);
 void set_custom_left_cell_margin(int width);
 void set_custom_right_cell_margin(int width);
+char *get_screen_cell_interface_version();
 
 #endif // cellscreen_h_INCLUDED
 

@@ -88,6 +88,7 @@ struct z_window
   WORDWRAP *wordwrapper;
 };
 
+static char *screen_cell_interface_version = LIBCELLINTERFACE_VERSION;
 static char* z_colour_names[] = { "black", "red", "green", "yellow", "blue",
   "magenta", "cyan", "white" };
 static int nof_z_colour_names = 8;
@@ -2977,7 +2978,7 @@ static void output_interface_info()
 
   i18n_translate(
       libcellif_module_name,
-      i18n_libcellif_LIBCELLINTERFACE_VERRSION_P0S,
+      i18n_libcellif_LIBCELLINTERFACE_VERSION_P0S,
       LIBCELLINTERFACE_VERSION);
   streams_latin1_output("\n");
 }
@@ -3216,4 +3217,9 @@ void new_cell_screen_size(int newysize, int newxsize)
   disable_more_prompt = false;
 }
 
+
+char *get_screen_cell_interface_version()
+{
+  return screen_cell_interface_version;
+}
 
