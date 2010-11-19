@@ -52,6 +52,7 @@ struct z_screen_cell_interface
       int width);
   void (*clear_to_eol)();
   void (*clear_area)(int startx, int starty, int xsize, int ysize);
+  void (*set_cursor_visibility)(bool visible);
 };
 
 #endif /* screen_cell_interface_h_INCLUDED */

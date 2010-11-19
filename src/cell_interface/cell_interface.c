@@ -2047,6 +2047,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
           top_upscroll_line = -1;
           upscroll_hit_top = false;
           destroy_history_output(history);
+          screen_cell_interface->set_cursor_visibility(true);
           refresh_screen();
         }
         else
@@ -2195,6 +2196,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
 
             restore_history_output_position(history);
 
+            screen_cell_interface->set_cursor_visibility(false);
             screen_cell_interface->update_screen();
           }
         }
@@ -2211,6 +2213,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
         top_upscroll_line = -1;
         upscroll_hit_top = false;
         destroy_history_output(history);
+        screen_cell_interface->set_cursor_visibility(true);
         refresh_screen();
       }
 
@@ -2911,15 +2914,9 @@ static void set_cursor(int16_t line, int16_t column, int16_t window_number)
     else
     {
       if (line == -1)
-      {
-        // turn cursor off
-        // FIXME: Implement
-      }
+        screen_cell_interface->set_cursor_visibility(false);
       else if (line == -2)
-      {
-        // turn cursor on
-        // FIXME: Implement
-      }
+        screen_cell_interface->set_cursor_visibility(true);
       else
         return;
     }
