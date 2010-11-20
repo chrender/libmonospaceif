@@ -89,9 +89,7 @@ struct z_window
 };
 
 static char *screen_cell_interface_version = LIBCELLINTERFACE_VERSION;
-static char* z_colour_names[] = { "black", "red", "green", "yellow", "blue",
-  "magenta", "cyan", "white" };
-static int nof_z_colour_names = 8;
+//static int nof_z_colour_names = 8;
 static int screen_height = -1;
 static int screen_width = -1;
 static int nof_active_z_windows = 0;
@@ -108,8 +106,8 @@ static z_ucs *ncursesw_if_turns_string;
 static int ncursesw_if_right_status_min_size;
 static int active_z_window_id = -1;
 //static int current_prompt_line_size = 0;
-static z_colour custom_foreground_colour = Z_COLOUR_UNDEFINED;
-static z_colour custom_background_colour = Z_COLOUR_UNDEFINED;
+//static z_colour custom_foreground_colour = Z_COLOUR_UNDEFINED;
+//static z_colour custom_background_colour = Z_COLOUR_UNDEFINED;
 z_colour default_foreground_colour = Z_COLOUR_WHITE; // non-static for storylistmenu
 z_colour default_background_colour = Z_COLOUR_BLACK; // non-static for storylistmenu
 static z_colour current_output_foreground_colour = -3;
@@ -816,16 +814,18 @@ static uint8_t get_total_width_in_pixels_of_text_sent_to_output_stream_3()
 }
 
 
+/*
 static short color_name_to_z_colour(char *colour_name)
 {
   int i = -1;
 
-  while (++i < nof_z_colour_names)
+  while (++i < NOF_Z_COLOURS)
     if (strcasecmp(colour_name, z_colour_names[i]) == 0)
       return i+2;
 
   return -1;
 }
+*/
 
 
 static int parse_config_parameter(char *key, char *value)
@@ -836,6 +836,7 @@ static int parse_config_parameter(char *key, char *value)
   TRACE_LOG("cell-if parsing config param key \"%s\", value \"%s\".\n",
       key, value != NULL ? value : "(null)");
 
+  /*
   if (strcasecmp(key, "background-color") == 0)
   {
     if ((custom_background_colour = color_name_to_z_colour(value)) != -1)
@@ -874,7 +875,9 @@ static int parse_config_parameter(char *key, char *value)
     else
       return -1;
   }
-  else if (strcasecmp(key, "left-margin") == 0)
+  */
+
+  if (strcasecmp(key, "left-margin") == 0)
   {
     if (value == NULL)
       return -1;
@@ -939,14 +942,42 @@ static void link_interface_to_story(struct z_story *story)
   //z_ucs *ptr;
   int len;
   int i;
+  char *config_value1, *config_value2;
+  short color_code;
 
   screen_cell_interface->link_interface_to_story(story);
+  config_value1 = get_configuration_value("enable-color");
+  config_value2 = get_configuration_value("disable-color");
+  if (
+      ( (config_value1 != NULL) && (strcasecmp(config_value1, "true") == 0) )
+      ||
+      (
+       (screen_cell_interface->is_colour_available() == true)
+       &&
+       ( (config_value2 == NULL) || (strcasecmp(config_value2, "true") != 0) )
+      )
+     )
+    using_colors = true;
 
   screen_height = screen_cell_interface->get_screen_height();
   screen_width = screen_cell_interface->get_screen_width();
 
   if (using_colors == true)
   {
+    TRACE_LOG("Color enabled.\n");
+    if ((config_value1 = get_configuration_value("foreground-color")) != NULL)
+    {
+      color_code = atoi(config_value1);
+      default_foreground_colour = color_code;
+    }
+    
+    if ((config_value1 = get_configuration_value("background-color")) != NULL)
+    {
+      color_code = atoi(config_value1);
+      default_background_colour = color_code;
+    }
+    
+    /*
     TRACE_LOG("custom-colors: %d, %d\n",
         custom_foreground_colour, custom_background_colour);
 
@@ -960,6 +991,11 @@ static void link_interface_to_story(struct z_story *story)
       default_foreground_colour = custom_foreground_colour;
       default_background_colour = custom_background_colour;
     }
+    */
+  }
+  else
+  {
+    TRACE_LOG("Color disabled.\n");
   }
 
   if (ver <= 2)
@@ -3046,8 +3082,6 @@ void fizmo_register_screen_cell_interface(struct z_screen_cell_interface
 
     screen_cell_interface = new_screen_cell_interface;
     set_configuration_value("enable-font3-conversion", "true");
-
-    using_colors = screen_cell_interface->is_colour_available();
 
     fizmo_register_screen_interface(&z_cell_interface);
   }
