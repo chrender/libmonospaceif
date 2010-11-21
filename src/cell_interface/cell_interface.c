@@ -89,7 +89,6 @@ struct z_window
 };
 
 static char *screen_cell_interface_version = LIBCELLINTERFACE_VERSION;
-//static int nof_z_colour_names = 8;
 static int screen_height = -1;
 static int screen_width = -1;
 static int nof_active_z_windows = 0;
@@ -102,14 +101,9 @@ static bool disable_more_prompt = false;
 static z_ucs *ncursesw_if_more_prompt;
 static z_ucs *ncursesw_if_score_string;
 static z_ucs *ncursesw_if_turns_string;
-//static z_ucs *statusline_space_string;
 static int ncursesw_if_right_status_min_size;
 static int active_z_window_id = -1;
 //static int current_prompt_line_size = 0;
-//static z_colour custom_foreground_colour = Z_COLOUR_UNDEFINED;
-//static z_colour custom_background_colour = Z_COLOUR_UNDEFINED;
-z_colour default_foreground_colour = Z_COLOUR_WHITE; // non-static for storylistmenu
-z_colour default_background_colour = Z_COLOUR_BLACK; // non-static for storylistmenu
 static z_colour current_output_foreground_colour = -3;
 static z_colour current_output_background_colour = -3;
 static z_style current_output_text_style = -1;
@@ -126,7 +120,7 @@ static bool winch_found = false;
 // corresponding outputhistory as long as upscrolling is active. As
 // soon as any output is received or the window size is changed, upscroling
 // is terminated and the screen returns to the bottom of the output -- this
-// aso automatically show the new output which has arrived, which should in
+// also automatically shows the new output which has arrived, which should in
 // most cases result from a interrupt routine.
 static int top_upscroll_line = -1; // != -1 indicates upscroll is active.
 static bool upscroll_hit_top = false;
@@ -189,158 +183,13 @@ static void wordwrap_output_style(void *window_number, uint32_t style_data)
 }
 
 
-/*
-static refresh_window_attrs()
-{
-  TRACE_LOG("Refreshing window attributes.\n");
-
-  TRACE_LOG("%d, %d, %d, %d\n",
-      current_foreground_output_colour,
-      z_windows[active_z_window_id]->foreground_colour,
-      current_background_output_colour,
-      z_windows[active_z_window_id]->background_colour);
-
-  if (
-      (current_foreground_output_colour
-       != z_windows[active_z_window_id]->foreground_colour)
-      ||
-      (current_background_output_colour
-       != z_windows[active_z_window_id]->background_colour)
-     )
-  {
-    if (bool_equal(z_windows[active_z_window_id]->buffering_active, false))
-    {
-      if (using_colors == true)
-        screen_cell_interface->set_colour(
-            z_windows[active_z_window_id]->foreground_colour,
-            z_windows[active_z_window_id]->background_colour);
-    }
-    else
-    {
-      TRACE_LOG("new metadata color(%d), :%d/%d.\n", active_z_window_id, z_windows[active_z_window_id]->foreground_colour, z_windows[active_z_window_id]->background_colour);
-      wordwrap_insert_metadata(
-	  z_windows[active_z_window_id]->wordwrapper,
-	  &wordwrap_output_colour,
-	  (void*)(&z_windows[active_z_window_id]->window_number),
-	  (uint16_t)z_windows[active_z_window_id]->foreground_colour
-	  | (((uint16_t)z_windows[
-	      active_z_window_id]->background_colour) << 16));
-    }
-
-    current_foreground_output_colour
-      = z_windows[active_z_window_id]->foreground_colour;
-    current_background_output_colour
-      = z_windows[active_z_window_id]->background_colour;
-  }
-
-  TRACE_LOG("Active win: %d.\n", active_z_window_id);
-  if (current_output_text_style
-      != z_windows[active_z_window_id]->text_style)
-  {
-    TRACE_LOG("Changing style of window %d to %d.\n",
-      active_z_window_id, z_windows[active_z_window_id]->text_style);
-
-    if (bool_equal(z_windows[active_z_window_id]->buffering_active, false))
-    {
-      screen_cell_interface->set_text_style(
-	  z_windows[active_z_window_id]->text_style);
-    }
-    else
-    {
-      wordwrap_insert_metadata(
-	  z_windows[active_z_window_id]->wordwrapper,
-	  &wordwrap_output_style,
-	  (void*)(&z_windows[active_z_window_id]->window_number),
-	  (uint32_t)z_windows[active_z_window_id]->text_style);
-    }
-
-    current_output_text_style = z_windows[active_z_window_id]->text_style;
-  }
-}
-*/
-
-
 static void switch_to_window(int window_id)
 {
   TRACE_LOG("Switching to window %d.\n", window_id);
 
   active_z_window_id = window_id;
-
-  /*
-  if (bool_equal(z_windows[active_z_window_id]->buffering_active, false))
-  {
-    if (current_output_text_style
-        != z_windows[active_z_window_id]->output_text_style)
-    {
-      TRACE_LOG("Changing style of window %d to %d.\n",
-          active_z_window_id, z_windows[active_z_window_id]->output_text_style);
-
-      screen_cell_interface->set_text_style(
-          z_windows[active_z_window_id]->output_text_style);
-    }
-  }
-
-  if (
-      (current_output_foreground_colour
-       != z_windows[active_z_window_id]->output_foreground_colour)
-      ||
-      (current_output_background_colour
-       != z_windows[active_z_window_id]->output_background_colour)
-     )
-  {
-    screen_cell_interface->set_text_style(
-        z_windows[active_z_window_id]->output_text_style);
-    if (using_colors == true)
-      screen_cell_interface->set_colour(
-          default_foreground_colour, default_background_colour);
-  }
-  */
-
   refresh_cursor(active_z_window_id);
 }
-
-
-/*
-static void ncursesw_start_padding(void *UNUSED(window_number))
-{
-}
-
-
-static void ncursesw_end_padding(void *UNUSED(window_number))
-{
-}
-*/
-
-
-  /*
-static void ncursesw_start_padding(void *window_number)
-{
-  int window_id = *((int*)window_number);
-  attr_t attrs = A_NORMAL;
-
-  wattr_get(
-      z_windows[window_id]->curses_window,
-      &padding_buffer_attrs,
-      &padding_buffer_pair,
-      NULL);
-
-  wattrset(z_windows[window_id]->curses_window, attrs);
-}
-  */
-
-
-  /*
-static void ncursesw_end_padding(void *window_number)
-{
-  int window_id = *((int*)window_number);
-
-  wattr_set(
-      z_windows[window_id]->curses_window,
-      padding_buffer_attrs,
-      padding_buffer_pair,
-      NULL);
-}
-  */
 
 
 static void update_output_colours(int window_number)
@@ -456,12 +305,8 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
     {
       TRACE_LOG("At end of line.\n");
       // At the end of the line
-      if (
-          (z_windows[window_number]->ycursorpos
-           == z_windows[window_number]->ysize)
-          //&&
-          //(z_windows[window_number]->ysize > 0)
-         )
+      if (z_windows[window_number]->ycursorpos
+          == z_windows[window_number]->ysize)
         screen_cell_interface->copy_area(
             z_windows[window_number]->ypos,
             z_windows[window_number]->xpos,
@@ -814,20 +659,6 @@ static uint8_t get_total_width_in_pixels_of_text_sent_to_output_stream_3()
 }
 
 
-/*
-static short color_name_to_z_colour(char *colour_name)
-{
-  int i = -1;
-
-  while (++i < NOF_Z_COLOURS)
-    if (strcasecmp(colour_name, z_colour_names[i]) == 0)
-      return i+2;
-
-  return -1;
-}
-*/
-
-
 static int parse_config_parameter(char *key, char *value)
 {
   long long_value;
@@ -835,47 +666,6 @@ static int parse_config_parameter(char *key, char *value)
 
   TRACE_LOG("cell-if parsing config param key \"%s\", value \"%s\".\n",
       key, value != NULL ? value : "(null)");
-
-  /*
-  if (strcasecmp(key, "background-color") == 0)
-  {
-    if ((custom_background_colour = color_name_to_z_colour(value)) != -1)
-      return 0;
-    else
-      return -1;
-  }
-  else if (strcasecmp(key, "foreground-color") == 0)
-  {
-    if ((custom_foreground_colour = color_name_to_z_colour(value)) != -1)
-      return 0;
-    else
-      return -1;
-  }
-  else if (strcasecmp(key, "dont-use-colors") == 0)
-  {
-    if (value == NULL)
-      return -1;
-    else if ((strcasecmp(value, "true")==0) || (strcasecmp(value, "yes")==0))
-    {
-      using_colors = false;
-      return 0;
-    }
-    else
-      return -1;
-  }
-  else if (strcasecmp(key, "enable-colors") == 0)
-  {
-    if (value == NULL)
-      return -1;
-    else if ((strcasecmp(value, "true")==0) || (strcasecmp(value, "yes")==0))
-    {
-      using_colors = screen_cell_interface->is_colour_available();
-      return 0;
-    }
-    else
-      return -1;
-  }
-  */
 
   if (strcasecmp(key, "left-margin") == 0)
   {
@@ -916,8 +706,6 @@ static void z_ucs_output(z_ucs *z_ucs_output)
     screen_cell_interface->z_ucs_output(z_ucs_output);
   else
   {
-    //refresh_window_attrs();
-
     if (bool_equal(z_windows[active_z_window_id]->buffering_active, false))
     {
       update_output_colours(active_z_window_id);
@@ -939,7 +727,6 @@ static void z_ucs_output(z_ucs *z_ucs_output)
 static void link_interface_to_story(struct z_story *story)
 {
   int bytes_to_allocate;
-  //z_ucs *ptr;
   int len;
   int i;
   char *config_value1, *config_value2;
@@ -949,54 +736,28 @@ static void link_interface_to_story(struct z_story *story)
   config_value1 = get_configuration_value("enable-color");
   config_value2 = get_configuration_value("disable-color");
   if (
+      // Either if configuration tell us to fore-enable color,
       ( (config_value1 != NULL) && (strcasecmp(config_value1, "true") == 0) )
       ||
+      // Or if color is available and not disabled by user,
       (
        (screen_cell_interface->is_colour_available() == true)
        &&
        ( (config_value2 == NULL) || (strcasecmp(config_value2, "true") != 0) )
       )
      )
-    using_colors = true;
-
-  screen_height = screen_cell_interface->get_screen_height();
-  screen_width = screen_cell_interface->get_screen_width();
-
-  if (using_colors == true)
   {
+    // we'll be using colors for this story.
+    using_colors = true;
     TRACE_LOG("Color enabled.\n");
-    if ((config_value1 = get_configuration_value("foreground-color")) != NULL)
-    {
-      color_code = atoi(config_value1);
-      default_foreground_colour = color_code;
-    }
-    
-    if ((config_value1 = get_configuration_value("background-color")) != NULL)
-    {
-      color_code = atoi(config_value1);
-      default_background_colour = color_code;
-    }
-    
-    /*
-    TRACE_LOG("custom-colors: %d, %d\n",
-        custom_foreground_colour, custom_background_colour);
-
-    if (
-        (is_regular_z_colour(custom_foreground_colour) == true)
-        &&
-        (is_regular_z_colour(custom_background_colour) == true)
-       )
-    {
-      TRACE_LOG("colok,\n");
-      default_foreground_colour = custom_foreground_colour;
-      default_background_colour = custom_background_colour;
-    }
-    */
   }
   else
   {
     TRACE_LOG("Color disabled.\n");
   }
+
+  screen_height = screen_cell_interface->get_screen_height();
+  screen_width = screen_cell_interface->get_screen_width();
 
   if (ver <= 2)
     nof_active_z_windows = 1;
@@ -1114,10 +875,11 @@ static void link_interface_to_story(struct z_story *story)
       false,
       true);
 
+  // First, set default colors for the screen, the clear it to correctly
+  // initialize everything with the desired colors.
   if (using_colors == true)
     screen_cell_interface->set_colour(
         default_foreground_colour, default_background_colour);
-
   screen_cell_interface->clear_area(1, 1, screen_width, screen_height);
 
   /*
@@ -1160,18 +922,6 @@ static void link_interface_to_story(struct z_story *story)
     + z_ucs_len(ncursesw_if_turns_string)
     + 9; // 5 Spaces, 2 colons, 2 digits.
 
-  /*
-  if (statusline_window_id > 0)
-  {
-    statusline_space_string = (z_ucs*)fizmo_malloc(
-      sizeof(z_ucs) * (z_windows[statusline_window_id]->xsize + 1));
-
-    for (i=0; i<z_windows[statusline_window_id]->xsize; i++)
-      statusline_space_string[i] = Z_UCS_SPACE;
-    statusline_space_string[i] = 0;
-  }
-  */
-
   refresh_cursor(active_z_window_id);
 
   /*
@@ -1205,12 +955,6 @@ static void reset_interface()
 static int cell_close_interface(z_ucs *error_message)
 {
   screen_cell_interface->close_interface(error_message);
-
-  /*
-  if (statusline_window_id > 0)
-    free(statusline_space_string);
-    */
-
   return 0;
 }
 
@@ -2834,7 +2578,6 @@ static void show_status(z_ucs *room_description, int status_line_mode,
 
     last_active_z_window_id = active_z_window_id;
     switch_to_window(statusline_window_id);
-    //z_ucs_output(statusline_space_string);
     erase_window(statusline_window_id);
 
     if (status_line_mode == SCORE_MODE_SCORE_AND_TURN)
@@ -2853,17 +2596,6 @@ static void show_status(z_ucs *room_description, int status_line_mode,
         buf = room_description[room_desc_space];
         room_description[room_desc_space] = 0;
       }
-
-      /*
-      TRACE_LOG("#2\n");
-      ptr2 = room_description;
-      while (*ptr2)
-      {
-        TRACE_LOG("%c\n", *ptr2);
-        ptr2++;
-      }
-      TRACE_LOG("#2a\n");
-      */
 
       z_windows[statusline_window_id]->xcursorpos = 2;
       refresh_cursor(statusline_window_id);
