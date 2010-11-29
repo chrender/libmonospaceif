@@ -730,7 +730,7 @@ static void link_interface_to_story(struct z_story *story)
   int len;
   int i;
   char *config_value1, *config_value2;
-  short color_code;
+  //short color_code;
 
   screen_cell_interface->link_interface_to_story(story);
   config_value1 = get_configuration_value("enable-color");
@@ -954,6 +954,24 @@ static void reset_interface()
 
 static int cell_close_interface(z_ucs *error_message)
 {
+  int event_type;
+  z_ucs input;
+
+  if (error_message == NULL)
+  {
+    streams_latin1_output("[");
+    i18n_translate(
+        libcellif_module_name,
+        i18n_libcellif_PRESS_ANY_KEY_TO_QUIT);
+    streams_latin1_output("]");
+    wordwrap_flush_output(z_windows[active_z_window_id]->wordwrapper);
+    screen_cell_interface->update_screen();
+
+    do
+      event_type = screen_cell_interface->get_next_event(&input, 0);
+    while (event_type == EVENT_WAS_WINCH);
+  }
+
   screen_cell_interface->close_interface(error_message);
   return 0;
 }
@@ -1616,6 +1634,214 @@ static void refresh_screen()
 }
 
 
+static void handle_scrolling(int event_type)
+{
+  int return_code;
+
+  if (
+      ((event_type == EVENT_WAS_CODE_PAGE_UP)&&(upscroll_hit_top == true))
+      ||
+      ((event_type == EVENT_WAS_CODE_PAGE_DOWN)&&(top_upscroll_line == -1))
+     )
+  {
+    TRACE_LOG("Already at top or bottom.\n");
+    // Already at top or already at bottom.
+  }
+  else
+  {
+    TRACE_LOG("top_upscroll_line: %d, history_screen_line: %d.\n",
+        top_upscroll_line, history_screen_line);
+
+    // TODO: Important: destroy_history_output_target(history);
+
+    // While in "upscroll mode", top_upscroll_line designates the current
+    // destination top line, history_screen_line the current paragraph
+    // starting positing on screen when output is formatted for the current
+    // screen width -- which means it says where on-screen the rewinded
+    // output history currently starts at.
+    if (top_upscroll_line == -1)
+    {
+      history = init_history_output(outputhistory[0], &history_target);
+      top_upscroll_line
+        = z_windows[0]->ysize + (z_windows[0]->ysize / 2);
+      history_screen_line = 0;
+    }
+    else if (event_type == EVENT_WAS_CODE_PAGE_UP)
+      top_upscroll_line += z_windows[0]->ysize / 2;
+    else
+      top_upscroll_line -= z_windows[0]->ysize / 2;
+
+    TRACE_LOG("top_upscroll_line: %d, history_screen_line: %d.\n",
+        top_upscroll_line, history_screen_line);
+
+    if (top_upscroll_line <= z_windows[0]->ysize)
+    {
+      // We're at the output bottom again. We'll simply turn of scrolling
+      // and use the default method to refresh the screen and especially
+      // the input line.
+      TRACE_LOG("Back at bottom.\n");
+      top_upscroll_line = -1;
+      upscroll_hit_top = false;
+      destroy_history_output(history);
+      screen_cell_interface->set_cursor_visibility(true);
+      refresh_screen();
+    }
+    else
+    {
+      refresh_count_mode = true;
+
+      // We're some way above the input line. We'll now have to find the
+      // next paragraph at the top of the screen or -- if no paragraph top
+      // is aligned with the screen top -- the start of the next paragraph
+      // above the screen.
+
+      if (event_type == EVENT_WAS_CODE_PAGE_UP)
+      {
+        // Scrolling up.
+        TRACE_LOG("Page up.\n");
+        while (history_screen_line < top_upscroll_line)
+        {
+          refresh_newline_counter = 0;
+          if (output_rewind_paragraph(history) < 0)
+            break;
+          TRACE_LOG("Start paragraph repetition.\n");
+          output_repeat_paragraphs(history, 1, false, false);
+          wordwrap_flush_output(refresh_wordwrapper);
+          TRACE_LOG("End paragraph repetition.\n");
+          history_screen_line += refresh_newline_counter + 1;
+        }
+
+        if (history_screen_line < top_upscroll_line)
+        {
+          // We've hit the top of the history.
+          TRACE_LOG("Hit top of history.\n");
+          if (history_screen_line <= z_windows[0]->ysize)
+          {
+            // Not enough in buffer to fill the screen at the moment,
+            // scrolling back not possible.
+            top_upscroll_line = -1;
+          }
+          else
+          {
+            upscroll_hit_top = true;
+            top_upscroll_line = history_screen_line;
+          }
+        }
+        else if (history_screen_line > top_upscroll_line)
+        {
+          // Above the desired line.
+          refresh_lines_to_skip = history_screen_line - top_upscroll_line;
+        }
+        else
+        {
+          // Exactly at the desired line.
+          refresh_lines_to_skip = 0;
+        }
+      }
+      else
+      {
+        // Scrolling down.
+        TRACE_LOG("Page down.\n");
+        upscroll_hit_top = false;
+
+        while (history_screen_line > top_upscroll_line)
+        {
+          remember_history_output_position(history);
+          last_history_screen_line = history_screen_line;
+          TRACE_LOG("top_upscroll_line: %d, history_screen_line: %d.\n",
+              top_upscroll_line, history_screen_line);
+
+          refresh_newline_counter = 0;
+          TRACE_LOG("Start paragraph repetition.\n");
+          output_repeat_paragraphs(history, 1, false, true);
+          wordwrap_flush_output(refresh_wordwrapper);
+          TRACE_LOG("End paragraph repetition.\n");
+          history_screen_line -= (refresh_newline_counter + 1);
+        }
+
+        if (history_screen_line != top_upscroll_line)
+        {
+          // We're now below the desired output line.
+          history_screen_line = last_history_screen_line;
+          restore_history_output_position(history);
+          refresh_lines_to_skip = history_screen_line - top_upscroll_line;
+
+          TRACE_LOG("Too low, going back. refresh_lines_to_skip: %d.\n",
+              refresh_lines_to_skip);
+        }
+        else
+        {
+          TRACE_LOG("Met top line exactly.\n");
+          // Exactly at the desired line.
+          refresh_lines_to_skip = 0;
+        }
+      }
+      refresh_count_mode = false;
+
+      if (top_upscroll_line < 0)
+      {
+        // Not enough in buffer to scroll at all.
+        destroy_history_output(history);
+      }
+      else
+      {
+        //wordwrap_set_line_index(refresh_wordwrapper, 0);
+
+        // We're now above our first desired output line. Before actual
+        // output begins, we'll remember the current output history state,
+        // so we can restore it at the end of the output. This helps
+        // accelerating the scrolling process, since after the next
+        // page up/down key press, we only have to adjust the history output
+        // position for one page, instead of having to scroll up the entire
+        // history from the output end.
+
+        remember_history_output_position(history);
+
+        erase_window(0);
+        refresh_lines_to_output = z_windows[0]->ysize;
+
+        z_windows[0]->xcursorpos = 1 + z_windows[0]->leftmargin;
+        z_windows[0]->ycursorpos = z_windows[0]->ypos;
+        refresh_cursor(0);
+
+        TRACE_LOG("Repeating %d lines.\n", refresh_lines_to_output);
+        TRACE_LOG("refreshscreen-ycursorpos: %d.\n",
+            z_windows[0]->ycursorpos);
+        disable_more_prompt = true;
+        while (refresh_lines_to_output > 0)
+        {
+          TRACE_LOG("%d lines left.\n", refresh_lines_to_output);
+          TRACE_LOG("(repeat paragraph)\n");
+          return_code = output_repeat_paragraphs(history, 1, true, true);
+          TRACE_LOG("(flush output)\n");
+          wordwrap_flush_output(refresh_wordwrapper);
+          TRACE_LOG("(refresh dest)\n");
+          TRACE_LOG("check: %d lines left.\n", refresh_lines_to_output);
+          if (refresh_lines_to_output > 1)
+            z_ucs_output_refresh_destination(newline_string, NULL); 
+          else
+            refresh_lines_to_output = 0;
+          if (return_code < 0)
+            break;
+        }
+        TRACE_LOG("%d lines left.\n", refresh_lines_to_output);
+        TRACE_LOG("Done output scrolling.\n");
+        disable_more_prompt = false;
+        TRACE_LOG("refreshscreen-ycursorpos: %d.\n",
+            z_windows[0]->ycursorpos);
+
+        restore_history_output_position(history);
+
+        screen_cell_interface->set_cursor_visibility(false);
+        screen_cell_interface->update_screen();
+      }
+    }
+
+    TRACE_LOG("Final top-upscroll line: %d.\n", top_upscroll_line);
+  }
+}
+
+
 // NOTE: Keep in mind that the verification routine may recursively
 // call a read (Border Zone does this).
 // This function reads a maximum of maximum_length characters from stdin
@@ -1643,9 +1869,8 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
   z_ucs input_buffer[maximum_length + 1];
   int cmd_history_index = 0, cmd_index;
   zscii *cmd_history_ptr;
-  int return_code;
   int current_tenth_seconds = 0;
-  int timed_routine_retval;
+  int timed_routine_retval, index;
 
   current_input_size = &input_size;
   current_input_scroll_x = &input_scroll_x;
@@ -1782,207 +2007,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
         (event_type == EVENT_WAS_CODE_PAGE_DOWN)
         )
     {
-      if (
-          ((event_type == EVENT_WAS_CODE_PAGE_UP)&&(upscroll_hit_top == true))
-          ||
-          ((event_type == EVENT_WAS_CODE_PAGE_DOWN)&&(top_upscroll_line == -1))
-         )
-      {
-        TRACE_LOG("Already at top or bottom.\n");
-        // Already at top or already at bottom.
-      }
-      else
-      {
-        TRACE_LOG("top_upscroll_line: %d, history_screen_line: %d.\n",
-            top_upscroll_line, history_screen_line);
-
-        // TODO: Important: destroy_history_output_target(history);
-
-        // While in "upscroll mode", top_upscroll_line designates the current
-        // destination top line, history_screen_line the current paragraph
-        // starting positing on screen when output is formatted for the current
-        // screen width -- which means it says where on-screen the rewinded
-        // output history currently starts at.
-        if (top_upscroll_line == -1)
-        {
-          history = init_history_output(outputhistory[0], &history_target);
-          top_upscroll_line
-            = z_windows[0]->ysize + (z_windows[0]->ysize / 2);
-          history_screen_line = 0;
-        }
-        else if (event_type == EVENT_WAS_CODE_PAGE_UP)
-          top_upscroll_line += z_windows[0]->ysize / 2;
-        else
-          top_upscroll_line -= z_windows[0]->ysize / 2;
-
-        TRACE_LOG("top_upscroll_line: %d, history_screen_line: %d.\n",
-            top_upscroll_line, history_screen_line);
-
-        if (top_upscroll_line <= z_windows[0]->ysize)
-        {
-          // We're at the output bottom again. We'll simply turn of scrolling
-          // and use the default method to refresh the screen and especially
-          // the input line.
-          TRACE_LOG("Back at bottom.\n");
-          top_upscroll_line = -1;
-          upscroll_hit_top = false;
-          destroy_history_output(history);
-          screen_cell_interface->set_cursor_visibility(true);
-          refresh_screen();
-        }
-        else
-        {
-          refresh_count_mode = true;
-
-          // We're some way above the input line. We'll now have to find the
-          // next paragraph at the top of the screen or -- if no paragraph top
-          // is aligned with the screen top -- the start of the next paragraph
-          // above the screen.
-
-          if (event_type == EVENT_WAS_CODE_PAGE_UP)
-          {
-            // Scrolling up.
-            TRACE_LOG("Page up.\n");
-            while (history_screen_line < top_upscroll_line)
-            {
-              refresh_newline_counter = 0;
-              if (output_rewind_paragraph(history) < 0)
-                break;
-              TRACE_LOG("Start paragraph repetition.\n");
-              output_repeat_paragraphs(history, 1, false, false);
-              wordwrap_flush_output(refresh_wordwrapper);
-              TRACE_LOG("End paragraph repetition.\n");
-              history_screen_line += refresh_newline_counter + 1;
-            }
-
-            if (history_screen_line < top_upscroll_line)
-            {
-              // We've hit the top of the history.
-              TRACE_LOG("Hit top of history.\n");
-              if (history_screen_line <= z_windows[0]->ysize)
-              {
-                // Not enough in buffer to fill the screen at the moment,
-                // scrolling back not possible.
-                top_upscroll_line = -1;
-              }
-              else
-              {
-                upscroll_hit_top = true;
-                top_upscroll_line = history_screen_line;
-              }
-            }
-            else if (history_screen_line > top_upscroll_line)
-            {
-              // Above the desired line.
-              refresh_lines_to_skip = history_screen_line - top_upscroll_line;
-            }
-            else
-            {
-              // Exactly at the desired line.
-              refresh_lines_to_skip = 0;
-            }
-          }
-          else
-          {
-            // Scrolling down.
-            TRACE_LOG("Page down.\n");
-            upscroll_hit_top = false;
-
-            while (history_screen_line > top_upscroll_line)
-            {
-              remember_history_output_position(history);
-              last_history_screen_line = history_screen_line;
-              TRACE_LOG("top_upscroll_line: %d, history_screen_line: %d.\n",
-                  top_upscroll_line, history_screen_line);
-
-              refresh_newline_counter = 0;
-              TRACE_LOG("Start paragraph repetition.\n");
-              output_repeat_paragraphs(history, 1, false, true);
-              wordwrap_flush_output(refresh_wordwrapper);
-              TRACE_LOG("End paragraph repetition.\n");
-              history_screen_line -= (refresh_newline_counter + 1);
-            }
-
-            if (history_screen_line != top_upscroll_line)
-            {
-              // We're now below the desired output line.
-              history_screen_line = last_history_screen_line;
-              restore_history_output_position(history);
-              refresh_lines_to_skip = history_screen_line - top_upscroll_line;
-
-              TRACE_LOG("Too low, going back. refresh_lines_to_skip: %d.\n",
-                  refresh_lines_to_skip);
-            }
-            else
-            {
-              TRACE_LOG("Met top line exactly.\n");
-              // Exactly at the desired line.
-              refresh_lines_to_skip = 0;
-            }
-          }
-          refresh_count_mode = false;
-
-          if (top_upscroll_line < 0)
-          {
-            // Not enough in buffer to scroll at all.
-            destroy_history_output(history);
-          }
-          else
-          {
-            //wordwrap_set_line_index(refresh_wordwrapper, 0);
-
-            // We're now above our first desired output line. Before actual
-            // output begins, we'll remember the current output history state,
-            // so we can restore it at the end of the output. This helps
-            // accelerating the scrolling process, since after the next
-            // page up/down key press, we only have to adjust the history output
-            // position for one page, instead of having to scroll up the entire
-            // history from the output end.
-
-            remember_history_output_position(history);
-
-            erase_window(0);
-            refresh_lines_to_output = z_windows[0]->ysize;
-
-            z_windows[0]->xcursorpos = 1 + z_windows[0]->leftmargin;
-            z_windows[0]->ycursorpos = z_windows[0]->ypos;
-            refresh_cursor(0);
-
-            TRACE_LOG("Repeating %d lines.\n", refresh_lines_to_output);
-            TRACE_LOG("refreshscreen-ycursorpos: %d.\n",
-                z_windows[0]->ycursorpos);
-            disable_more_prompt = true;
-            while (refresh_lines_to_output > 0)
-            {
-              TRACE_LOG("%d lines left.\n", refresh_lines_to_output);
-              TRACE_LOG("(repeat paragraph)\n");
-              return_code = output_repeat_paragraphs(history, 1, true, true);
-              TRACE_LOG("(flush output)\n");
-              wordwrap_flush_output(refresh_wordwrapper);
-              TRACE_LOG("(refresh dest)\n");
-              TRACE_LOG("check: %d lines left.\n", refresh_lines_to_output);
-              if (refresh_lines_to_output > 1)
-                z_ucs_output_refresh_destination(newline_string, NULL); 
-              else
-                refresh_lines_to_output = 0;
-              if (return_code < 0)
-                break;
-            }
-            TRACE_LOG("%d lines left.\n", refresh_lines_to_output);
-            TRACE_LOG("Done output scrolling.\n");
-            disable_more_prompt = false;
-            TRACE_LOG("refreshscreen-ycursorpos: %d.\n",
-                z_windows[0]->ycursorpos);
-
-            restore_history_output_position(history);
-
-            screen_cell_interface->set_cursor_visibility(false);
-            screen_cell_interface->update_screen();
-          }
-        }
-
-        TRACE_LOG("Final top-upscroll line: %d.\n", top_upscroll_line);
-      }
+      handle_scrolling(event_type);
     }
     else
     {
@@ -2382,6 +2407,49 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
             screen_cell_interface->get_screen_height(),
             screen_cell_interface->get_screen_width());
       }
+      else if (event_type == EVENT_WAS_CODE_CTRL_A)
+      {
+        if (input_index > 0)
+        {
+          if (input_scroll_x > 0)
+          {
+            input_scroll_x  = 0;
+            index = input_display_width < input_size
+              ? input_display_width : input_size;
+            char_buf[0] = input_buffer[index];
+            input_buffer[index] = 0;
+            screen_cell_interface->goto_yx(input_y, input_x);
+            screen_cell_interface->z_ucs_output(input_buffer);
+            input_buffer[index] = char_buf[0];
+          }
+
+          z_windows[active_z_window_id]->xcursorpos = input_x;
+          input_index = 0;
+          refresh_cursor(active_z_window_id);
+          screen_cell_interface->update_screen();
+        }
+      }
+      else if (event_type == EVENT_WAS_CODE_CTRL_E)
+      {
+        TRACE_LOG("input_size:%d, input_display_width:%d.\n",
+            input_size, input_display_width);
+
+        if (input_size > input_display_width - 1)
+        {
+          input_scroll_x = input_size - input_display_width + 1;
+          screen_cell_interface->goto_yx(input_y, input_x);
+          screen_cell_interface->z_ucs_output(input_buffer + input_scroll_x);
+          screen_cell_interface->clear_to_eol();
+          z_windows[active_z_window_id]->xcursorpos
+            = input_x + input_display_width - 1;
+        }
+        else
+          z_windows[active_z_window_id]->xcursorpos = input_x + input_size;
+
+        input_index = input_size;
+        refresh_cursor(active_z_window_id);
+        screen_cell_interface->update_screen();
+      }
     }
 
     TRACE_LOG("readline-ycursorpos: %d.\n", z_windows[0]->ycursorpos);
@@ -2459,82 +2527,104 @@ static int read_char(uint16_t tenth_seconds, uint32_t verification_routine,
   {
     event_type = screen_cell_interface->get_next_event(&input, timeout_millis);
 
-    if (event_type == EVENT_WAS_INPUT)
+    if (
+        (event_type == EVENT_WAS_CODE_PAGE_UP)
+        ||
+        (event_type == EVENT_WAS_CODE_PAGE_DOWN)
+       )
     {
-      result = unicode_char_to_zscii_input_char(input);
-
-      if (result != 0xff)
-        input_in_progress = false;
+      handle_scrolling(event_type);
     }
-    else if (event_type == EVENT_WAS_CODE_CURSOR_UP)
+    else
     {
-      result = 129;
-      input_in_progress = false;
-    }
-    else if (event_type == EVENT_WAS_CODE_CURSOR_DOWN)
-    {
-      result = 130;
-      input_in_progress = false;
-    }
-    else if (event_type == EVENT_WAS_CODE_CURSOR_LEFT)
-    {
-      result = 131;
-      input_in_progress = false;
-    }
-    else if (event_type == EVENT_WAS_CODE_CURSOR_RIGHT)
-    {
-      result = 132;
-      input_in_progress = false;
-    }
-    else if (event_type == EVENT_WAS_TIMEOUT)
-    {
-      TRACE_LOG("timeout found.\n");
-
-      if (timed_input_active == true)
+      if (top_upscroll_line != -1)
       {
-        current_tenth_seconds++;
-        if (tenth_seconds_elapsed != NULL)
-          (*tenth_seconds_elapsed)++;
+        // End up-scroll.
+        TRACE_LOG("Ending scrollback.\n");
+        top_upscroll_line = -1;
+        upscroll_hit_top = false;
+        destroy_history_output(history);
+        screen_cell_interface->set_cursor_visibility(true);
+        refresh_screen();
+      }
 
-        if (current_tenth_seconds == tenth_seconds)
+      if (event_type == EVENT_WAS_INPUT)
+      {
+        result = unicode_char_to_zscii_input_char(input);
+
+        if (result != 0xff)
+          input_in_progress = false;
+      }
+      else if (event_type == EVENT_WAS_CODE_CURSOR_UP)
+      {
+        result = 129;
+        input_in_progress = false;
+      }
+      else if (event_type == EVENT_WAS_CODE_CURSOR_DOWN)
+      {
+        result = 130;
+        input_in_progress = false;
+      }
+      else if (event_type == EVENT_WAS_CODE_CURSOR_LEFT)
+      {
+        result = 131;
+        input_in_progress = false;
+      }
+      else if (event_type == EVENT_WAS_CODE_CURSOR_RIGHT)
+      {
+        result = 132;
+        input_in_progress = false;
+      }
+      else if (event_type == EVENT_WAS_TIMEOUT)
+      {
+        TRACE_LOG("timeout found.\n");
+
+        if (timed_input_active == true)
         {
-          current_tenth_seconds = 0;
-          stream_output_has_occured = false;
+          current_tenth_seconds++;
+          if (tenth_seconds_elapsed != NULL)
+            (*tenth_seconds_elapsed)++;
 
-          TRACE_LOG("calling timed-input-routine at %x.\n",
-              verification_routine);
-          timed_routine_retval = interpret_from_call(verification_routine);
-          TRACE_LOG("timed-input-routine finished.\n");
-
-          if (terminate_interpreter != INTERPRETER_QUIT_NONE)
+          if (current_tenth_seconds == tenth_seconds)
           {
-            TRACE_LOG("Quitting after verification.\n");
-            input_in_progress = false;
-            result = 0;
-          }
-          else
-          {
-            if (stream_output_has_occured == true)
-            {
-              flush_all_buffered_windows();
-              screen_cell_interface->update_screen();
-            }
+            current_tenth_seconds = 0;
+            stream_output_has_occured = false;
 
-            if (timed_routine_retval != 0)
+            TRACE_LOG("calling timed-input-routine at %x.\n",
+                verification_routine);
+            timed_routine_retval = interpret_from_call(verification_routine);
+            TRACE_LOG("timed-input-routine finished.\n");
+
+            if (terminate_interpreter != INTERPRETER_QUIT_NONE)
             {
+              TRACE_LOG("Quitting after verification.\n");
               input_in_progress = false;
               result = 0;
+            }
+            else
+            {
+              if (stream_output_has_occured == true)
+              {
+                flush_all_buffered_windows();
+                screen_cell_interface->update_screen();
+              }
+
+              if (timed_routine_retval != 0)
+              {
+                input_in_progress = false;
+                result = 0;
+              }
             }
           }
         }
       }
-    }
-    else if (event_type == EVENT_WAS_WINCH)
-    {
-      TRACE_LOG("timeout.\n");
-      new_cell_screen_size(
-          screen_cell_interface->get_screen_height(),
-          screen_cell_interface->get_screen_width());
+      else if (event_type == EVENT_WAS_WINCH)
+      {
+        TRACE_LOG("timeout.\n");
+        new_cell_screen_size(
+            screen_cell_interface->get_screen_height(),
+            screen_cell_interface->get_screen_width());
+      }
     }
   }
 
