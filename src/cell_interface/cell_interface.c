@@ -1371,7 +1371,7 @@ static void refresh_input_line()
       *current_input_scroll_x + *current_input_display_width] = buf;
 
   z_windows[0]->xcursorpos
-    = 2 + z_windows[0]->leftmargin
+    = *current_input_x
     + (*current_input_size - *current_input_scroll_x);
 
   /*
@@ -1472,20 +1472,41 @@ static void refresh_screen()
   disable_more_prompt = true;
 
   TRACE_LOG("Repeating %d paragraphs.\n", paragraphs_to_output);
-  TRACE_LOG("#1refreshscreen-ycursorpos: %d.\n", z_windows[0]->ycursorpos);
   output_repeat_paragraphs(history, paragraphs_to_output, true, false);
-  TRACE_LOG("#2refreshscreen-ycursorpos: %d.\n", z_windows[0]->ycursorpos);
 
   wordwrap_flush_output(refresh_wordwrapper);
-  TRACE_LOG("#3refreshscreen-ycursorpos: %d.\n", z_windows[0]->ycursorpos);
 
-  if (ver <= 3)
-    display_status_line();
-  TRACE_LOG("#4refreshscreen-ycursorpos: %d.\n", z_windows[0]->ycursorpos);
+  TRACE_LOG("input-pos: %d, width: %d.\n", 
+      z_windows[0]->xpos + z_windows[0]->xcursorpos + z_windows[0]->rightmargin,
+      z_windows[0]->xsize - 1);
+
+  if (z_windows[0]->xcursorpos + z_windows[0]->rightmargin
+      > z_windows[0]->xsize - 1)
+  {
+    TRACE_LOG("breaking line, too short for input.\n");
+
+    z_ucs_output_window_target(
+        newline_string,
+        (void*)(&z_windows[0]->window_number));
+  }
+
+  *current_input_y
+    = z_windows[0]->ypos + z_windows[0]->ycursorpos - 1;
+  *current_input_x
+    = z_windows[0]->xpos + z_windows[0]->xcursorpos - 1;
+  *current_input_display_width
+    = z_windows[0]->xpos + z_windows[0]->xsize - *current_input_x;
+
+  TRACE_LOG("refresh-x: %d, refresh-y: %d.\n",
+      *current_input_x, *current_input_y);
+  TRACE_LOG("new input width: %d.\n",
+      *current_input_display_width);
 
   if (input_line_on_screen == true)
     refresh_input_line();
-  TRACE_LOG("#5refreshscreen-ycursorpos: %d.\n", z_windows[0]->ycursorpos);
+
+  if (ver <= 3)
+    display_status_line();
 
   destroy_history_output(history);
 
@@ -1886,6 +1907,18 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
   for (i=0; i<nof_active_z_windows; i++)
     z_windows[i]->nof_consecutive_lines_output = 0;
 
+  if (z_windows[active_z_window_id]->xcursorpos
+      + z_windows[active_z_window_id]->rightmargin
+      > z_windows[active_z_window_id]->xsize - 1)
+  {
+    TRACE_LOG("breaking line, too short for input.\n");
+
+    z_ucs_output_window_target(
+        newline_string,
+        (void*)(&z_windows[active_z_window_id]->window_number));
+    refresh_screen();
+  }
+
   if (winch_found == true)
   {
     new_cell_screen_size(
@@ -1936,6 +1969,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
     - preloaded_input;
 
   TRACE_LOG("input_x:%d, input_y:%d.\n", input_x, input_y);
+  TRACE_LOG("input width: %d.\n", input_display_width);
 
   //REMOVE:
   //input_display_width = 5;
@@ -2090,9 +2124,14 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
           if (input_size < maximum_length)
             input_size++;
 
+          TRACE_LOG("xcp %d, rm %d, xs: %d.\n",
+              z_windows[active_z_window_id]->xcursorpos -1,
+              z_windows[active_z_window_id]->rightmargin,
+              z_windows[active_z_window_id]->xsize);
+
           if (z_windows[active_z_window_id]->xcursorpos -1
-              - z_windows[active_z_window_id]->rightmargin
-              == input_display_width)
+              + z_windows[active_z_window_id]->rightmargin
+              == z_windows[active_z_window_id]->xsize)
             input_scroll_x++;
           else
             z_windows[active_z_window_id]->xcursorpos++;
