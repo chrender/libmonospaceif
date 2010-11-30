@@ -301,10 +301,11 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
     TRACE_LOG("\".\n");
 
     screen_cell_interface->z_ucs_output(z_ucs_output);
-    screen_cell_interface->set_text_style(0);
 
     if (linebreak != NULL)
     {
+      screen_cell_interface->set_text_style(0);
+
       TRACE_LOG("At end of line.\n");
       // At the end of the line
       if (z_windows[window_number]->ycursorpos
@@ -324,6 +325,9 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
 
       refresh_cursor(window_number);
       screen_cell_interface->clear_to_eol();
+
+      screen_cell_interface->set_text_style(
+          z_windows[window_number]->output_text_style);
 
       *linebreak = buf;
       z_ucs_output = linebreak;
@@ -396,9 +400,6 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
         z_windows[window_number]->nof_consecutive_lines_output = 0;
         TRACE_LOG("more prompt finished: %d.\n", event_type);
       }
-
-      screen_cell_interface->set_text_style(
-          z_windows[window_number]->output_text_style);
     }
     else
     {
@@ -1419,6 +1420,7 @@ static void refresh_screen()
       z_windows[0]->xsize - z_windows[0]->leftmargin
       - z_windows[0]->rightmargin);
 
+  screen_cell_interface->set_text_style(0);
   erase_window(0);
 
   refresh_newline_counter = 0;
@@ -1710,6 +1712,8 @@ static void handle_scrolling(int event_type)
     else
     {
       refresh_count_mode = true;
+
+      screen_cell_interface->set_text_style(0);
 
       // We're some way above the input line. We'll now have to find the
       // next paragraph at the top of the screen or -- if no paragraph top
