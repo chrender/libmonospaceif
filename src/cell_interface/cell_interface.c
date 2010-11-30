@@ -95,7 +95,6 @@ static int nof_active_z_windows = 0;
 static int statusline_window_id = -1;
 static int custom_left_margin = 0;
 static int custom_right_margin = 0;
-//z_ucs *current_prompt_line = NULL;
 static bool using_colors = false;
 static bool disable_more_prompt = false;
 static z_ucs *ncursesw_if_more_prompt;
@@ -103,7 +102,6 @@ static z_ucs *ncursesw_if_score_string;
 static z_ucs *ncursesw_if_turns_string;
 static int ncursesw_if_right_status_min_size;
 static int active_z_window_id = -1;
-//static int current_prompt_line_size = 0;
 static z_colour current_output_foreground_colour = -3;
 static z_colour current_output_background_colour = -3;
 static z_style current_output_text_style = -1;
@@ -131,7 +129,6 @@ static int history_screen_line, last_history_screen_line;
 // used by screen refresh functions like "new_cell_screen_size".
 static bool input_line_on_screen = false;
 static z_ucs *current_input_buffer = NULL;
-//static int input_buffer_size = 0;
 static z_ucs newline_string[] = { '\n', 0 };
 
 static bool timed_input_active;
@@ -282,6 +279,10 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
         : NULL;
     }
 
+    // Direct output of the current line including the newline char does
+    // not work if margins are used and probably (untested) if a window
+    // is not at the left side.
+
     if (linebreak != NULL)
     {
       TRACE_LOG("linebreak found.\n");
@@ -300,6 +301,7 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
     TRACE_LOG("\".\n");
 
     screen_cell_interface->z_ucs_output(z_ucs_output);
+    screen_cell_interface->set_text_style(0);
 
     if (linebreak != NULL)
     {
@@ -394,6 +396,9 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
         z_windows[window_number]->nof_consecutive_lines_output = 0;
         TRACE_LOG("more prompt finished: %d.\n", event_type);
       }
+
+      screen_cell_interface->set_text_style(
+          z_windows[window_number]->output_text_style);
     }
     else
     {
@@ -881,11 +886,6 @@ static void link_interface_to_story(struct z_story *story)
     screen_cell_interface->set_colour(
         default_foreground_colour, default_background_colour);
   screen_cell_interface->clear_area(1, 1, screen_width, screen_height);
-
-  /*
-  bytes_to_allocate = sizeof(z_ucs) * screen_width;
-  current_prompt_line = (z_ucs*)fizmo_malloc(bytes_to_allocate);
-  */
 
   ncursesw_if_more_prompt
     = i18n_translate_to_string(
@@ -3051,16 +3051,6 @@ void new_cell_screen_size(int newysize, int newxsize)
     if (z_windows[i]->xcursorpos > z_windows[i]->xsize)
       z_windows[i]->xcursorpos = z_windows[i]->xsize;
   }
-
-  /*
-  if (screen_width > current_prompt_line_size)
-  {
-    current_prompt_line = (z_ucs*)fizmo_realloc(
-        current_prompt_line,
-        sizeof(z_ucs) * screen_width);
-    current_prompt_line_size = screen_width;
-  }
-  */
 
   if (input_line_on_screen == true)
   {
