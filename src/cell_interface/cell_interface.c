@@ -112,6 +112,7 @@ static int refresh_lines_to_skip;
 static int refresh_lines_to_output;
 static int last_split_window_size = 0;
 static bool winch_found = false;
+static bool interface_open = false;
 
 // Scrolling upwards:
 // It is always assumed that there's no output to window[0] and it's
@@ -944,6 +945,8 @@ static void link_interface_to_story(struct z_story *story)
      )
     printf("%c]0;%s%c", 033, story->title, 007);
   */
+
+  interface_open = true;
 }
 
 
@@ -974,6 +977,7 @@ static int cell_close_interface(z_ucs *error_message)
   }
 
   screen_cell_interface->close_interface(error_message);
+  interface_open = false;
   return 0;
 }
 
@@ -1425,7 +1429,8 @@ static void refresh_screen()
 
   refresh_newline_counter = 0;
 
-  history = init_history_output(outputhistory[0], &history_target);
+  if ((history = init_history_output(outputhistory[0],&history_target)) == NULL)
+    return;
   TRACE_LOG("History: %p\n", history);
 
   TRACE_LOG("Trying to find paragraph to fill %d lines.\n",
@@ -1478,34 +1483,37 @@ static void refresh_screen()
 
   wordwrap_flush_output(refresh_wordwrapper);
 
-  TRACE_LOG("input-pos: %d, width: %d.\n", 
-      z_windows[0]->xpos + z_windows[0]->xcursorpos + z_windows[0]->rightmargin,
-      z_windows[0]->xsize - 1);
-
-  if (z_windows[0]->xcursorpos + z_windows[0]->rightmargin
-      > z_windows[0]->xsize - 1)
-  {
-    TRACE_LOG("breaking line, too short for input.\n");
-
-    z_ucs_output_window_target(
-        newline_string,
-        (void*)(&z_windows[0]->window_number));
-  }
-
-  *current_input_y
-    = z_windows[0]->ypos + z_windows[0]->ycursorpos - 1;
-  *current_input_x
-    = z_windows[0]->xpos + z_windows[0]->xcursorpos - 1;
-  *current_input_display_width
-    = z_windows[0]->xpos + z_windows[0]->xsize - *current_input_x;
-
-  TRACE_LOG("refresh-x: %d, refresh-y: %d.\n",
-      *current_input_x, *current_input_y);
-  TRACE_LOG("new input width: %d.\n",
-      *current_input_display_width);
-
   if (input_line_on_screen == true)
+  {
+    TRACE_LOG("input-pos: %d, width: %d.\n", 
+        z_windows[0]->xpos + z_windows[0]->xcursorpos
+        + z_windows[0]->rightmargin,
+        z_windows[0]->xsize - 1);
+
+    if (z_windows[0]->xcursorpos + z_windows[0]->rightmargin
+        > z_windows[0]->xsize - 1)
+    {
+      TRACE_LOG("breaking line, too short for input.\n");
+
+      z_ucs_output_window_target(
+          newline_string,
+          (void*)(&z_windows[0]->window_number));
+    }
+
+    *current_input_y
+      = z_windows[0]->ypos + z_windows[0]->ycursorpos - 1;
+    *current_input_x
+      = z_windows[0]->xpos + z_windows[0]->xcursorpos - 1;
+    *current_input_display_width
+      = z_windows[0]->xpos + z_windows[0]->xsize - *current_input_x;
+
+    TRACE_LOG("refresh-x: %d, refresh-y: %d.\n",
+        *current_input_x, *current_input_y);
+    TRACE_LOG("new input width: %d.\n",
+        *current_input_display_width);
+
     refresh_input_line();
+  }
 
   if (ver <= 3)
     display_status_line();
@@ -2069,6 +2077,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
         else if (input == 12)
         {
           TRACE_LOG("Got CTRL-L.\n");
+          //refresh_screen();
           screen_cell_interface->redraw_screen_from_scratch();
         }
         else if (
@@ -2888,6 +2897,16 @@ static bool input_must_be_repeated_by_story()
 }
 
 
+static void game_was_restored_and_history_modified()
+{
+  if (interface_open == true)
+  {
+    refresh_screen();
+    //screen_cell_interface->update_screen();
+  } 
+}
+
+
 static struct z_screen_interface z_cell_interface =
 {
   &get_interface_name,
@@ -2933,7 +2952,8 @@ static struct z_screen_interface z_cell_interface =
   &erase_line_value,
   &erase_line_pixels,
   &output_interface_info,
-  &input_must_be_repeated_by_story
+  &input_must_be_repeated_by_story,
+  &game_was_restored_and_history_modified
 };
 
 
