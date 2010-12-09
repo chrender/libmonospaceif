@@ -2605,10 +2605,18 @@ static int read_char(uint16_t tenth_seconds, uint32_t verification_routine,
 
       if (event_type == EVENT_WAS_INPUT)
       {
-        result = unicode_char_to_zscii_input_char(input);
+        if (input == 12)
+        {
+          TRACE_LOG("Got CTRL-L.\n");
+          screen_cell_interface->redraw_screen_from_scratch();
+        }
+        else
+        {
+          result = unicode_char_to_zscii_input_char(input);
 
-        if (result != 0xff)
-          input_in_progress = false;
+          if (result != 0xff)
+            input_in_progress = false;
+        }
       }
       else if (event_type == EVENT_WAS_CODE_CURSOR_UP)
       {
