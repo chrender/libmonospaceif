@@ -739,7 +739,10 @@ static void link_interface_to_story(struct z_story *story)
   char *config_value1, *config_value2;
   //short color_code;
 
+  TRACE_LOG("Linking screen interface to cell interface.\n");
   screen_cell_interface->link_interface_to_story(story);
+  TRACE_LOG("Linking complete.\n");
+
   config_value1 = get_configuration_value("enable-color");
   config_value2 = get_configuration_value("disable-color");
   if (
@@ -961,7 +964,7 @@ static int cell_close_interface(z_ucs *error_message)
   int event_type;
   z_ucs input;
 
-  if (error_message == NULL)
+  if ( (error_message == NULL) && (interface_open == true) )
   {
     streams_latin1_output("[");
     i18n_translate(
@@ -1106,10 +1109,10 @@ static void set_colour(z_colour foreground, z_colour background,
   if (using_colors != true)
     return;
 
-  if ( (foreground < 1) || (background < 1) )
+  if ( (foreground < 0) || (background < 0) )
   {
-    TRACE_LOG("Colors < -1 not yet implemented.\n");
-    exit(-1);
+    TRACE_LOG("Colors < 0 not yet implemented.\n");
+    exit(-102);
   }
 
   if (foreground == Z_COLOUR_CURRENT)
