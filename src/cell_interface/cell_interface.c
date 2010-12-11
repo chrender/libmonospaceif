@@ -1056,6 +1056,12 @@ static void erase_window(int16_t window_number)
        nof_active_z_windows - (statusline_window_id >= 0 ? 1 : 0))
      )
   {
+    // Erasing window -1 clears the whole screen to the background colour of
+    // the lower screen, collapses the upper window to height 0, moves the
+    // cursor of the lower screen to bottom left (in Version 4) or top left
+    // (in Versions 5 and later) and selects the lower screen. The same
+    // operation should happen at the start of a game (Z-Spec 8.7.3.3).
+
     if (bool_equal(z_windows[window_number]->buffering_active, true))
       wordwrap_flush_output(z_windows[window_number]->wordwrapper);
 
