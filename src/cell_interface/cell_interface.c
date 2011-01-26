@@ -743,27 +743,30 @@ static void link_interface_to_story(struct z_story *story)
   screen_cell_interface->link_interface_to_story(story);
   TRACE_LOG("Linking complete.\n");
 
-  config_value1 = get_configuration_value("enable-color");
-  config_value2 = get_configuration_value("disable-color");
-  if (
-      // Either if configuration tell us to fore-enable color,
-      ( (config_value1 != NULL) && (strcasecmp(config_value1, "true") == 0) )
-      ||
-      // Or if color is available and not disabled by user,
-      (
-       (screen_cell_interface->is_colour_available() == true)
-       &&
-       ( (config_value2 == NULL) || (strcasecmp(config_value2, "true") != 0) )
-      )
-     )
+  if (ver >= 5)
   {
-    // we'll be using colors for this story.
-    using_colors = true;
-    TRACE_LOG("Color enabled.\n");
-  }
-  else
-  {
-    TRACE_LOG("Color disabled.\n");
+    config_value1 = get_configuration_value("enable-color");
+    config_value2 = get_configuration_value("disable-color");
+    if (
+        // Either if configuration tell us to fore-enable color,
+        ( (config_value1 != NULL) && (strcasecmp(config_value1, "true") == 0) )
+        ||
+        // Or if color is available and not disabled by user,
+        (
+         (screen_cell_interface->is_colour_available() == true)
+         &&
+         ( (config_value2 == NULL) || (strcasecmp(config_value2, "true") != 0) )
+        )
+       )
+    {
+      // we'll be using colors for this story.
+      using_colors = true;
+      TRACE_LOG("Color enabled.\n");
+    }
+    else
+    {
+      TRACE_LOG("Color disabled.\n");
+    }
   }
 
   screen_height = screen_cell_interface->get_screen_height();
