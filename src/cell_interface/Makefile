@@ -2,7 +2,6 @@
 .PHONY : clean
 
 include ../../config.mk
-include $(FIZMO_INC_DIR)/fizmo/libfizmo.mk
 
 ifneq ($(ENABLE_GDB_SYMBOLS),)
 override CFLAGS += -g
@@ -16,15 +15,13 @@ ifneq ($(ENABLE_TRACING),)
 override CFLAGS += -DENABLE_TRACING=
 endif
 
-INC_DIRS = $(LIBFIZMO_INC_DIRS)
-LIB_DIRS = $(LIBFIZMO_LIB_DIRS)
-LIBS = $(LIBFIZMO_LIBS)
+LIBFIZMO_CFLAGS = $(shell pkg-config --cflags libfizmo)
 
 libcellif.a: cell_interface.o ../locales/libcellif_locales.o
 	$(AR) rcs libcellif.a cell_interface.o ../locales/libcellif_locales.o
 
 cell_interface.o: cell_interface.h cell_interface.c
-	$(CC) $(CFLAGS) $(INC_DIRS) -c cell_interface.c
+	$(CC) $(CFLAGS) -c cell_interface.c $(LIBFIZMO_CFLAGS)
 
 ../locales/libcellif_locales.o::
 	cd ../locales ; make

@@ -1,8 +1,6 @@
 
 include ../../config.mk
 
-include $(FIZMO_INC_DIR)/fizmo/libfizmo.mk
-
 
 ifneq ($(ENABLE_GDB_SYMBOLS),)
 override CFLAGS += -g
@@ -12,14 +10,15 @@ ifneq ($(ENABLE_OPTIMIZATION),)
 override CFLAGS += -O2
 endif
 
+LIBFIZMO_CFLAGS = $(shell pkg-config --cflags libfizmo)
+
 
 .PHONY : clean
 
 all: libcellif_locales.o
 
-
 libcellif_locales.o: libcellif_locales.c
-	$(CC) $(CFLAGS) -I$(FIZMO_INC_DIR) -c libcellif_locales.c
+	$(CC) $(CFLAGS) $(LIBFIZMO_CFLAGS) -c libcellif_locales.c
 
 clean:
 	rm -f *.o

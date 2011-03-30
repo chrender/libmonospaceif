@@ -33,7 +33,7 @@
 #ifndef libcell_locales_c_INCLUDED 
 #define libcell_locales_c_INCLUDED
 
-#include "fizmo/tools/types.h"
+#include "tools/types.h"
 
 z_ucs libcellif_module_name[]
  = { 'l', 'i', 'b', 'c', 'e', 'l', 'l', 'i', 'f', 0};
