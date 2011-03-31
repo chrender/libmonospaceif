@@ -1,5 +1,5 @@
 
-.PHONY : all install install-locales clean distclean
+.PHONY : all install install-dev install-locales clean distclean
 
 include config.mk
 
@@ -18,7 +18,9 @@ libcellif.a: src/cell_interface/libcellif.a
 src/cell_interface/libcellif.a::
 	cd src/cell_interface ; make
 
-install:: libcellif.a install-locales
+install:: install-locales
+
+install-dev:: libcellif.a
 	mkdir -p $(DEV_INSTALL_PREFIX)/lib/fizmo
 	mkdir -p $(DEV_INSTALL_PREFIX)/include/fizmo/cell_interface
 	cp src/cell_interface/*.h \
