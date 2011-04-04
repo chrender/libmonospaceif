@@ -728,6 +728,7 @@ static void z_ucs_output(z_ucs *z_ucs_output)
         z_windows[active_z_window_id]->wordwrapper, z_ucs_output);
     }
   }
+  TRACE_LOG("z_ucs_output finished.\n");
 }
 
 
@@ -2879,13 +2880,17 @@ static void set_cursor(int16_t line, int16_t column, int16_t window_number)
 
 static uint16_t get_cursor_row()
 {
-  return 0;
+  return (z_windows[active_z_window_id]->ypos - 1)
+    + (z_windows[active_z_window_id]->ycursorpos - 1)
+    + 1;
 }
 
 
 static uint16_t get_cursor_column()
 {
-  return 0;
+  return (z_windows[active_z_window_id]->xpos - 1)
+    + (z_windows[active_z_window_id]->xcursorpos - 1)
+    + 1;
 }
 
 
