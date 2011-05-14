@@ -95,6 +95,7 @@ static int nof_active_z_windows = 0;
 static int statusline_window_id = -1;
 static int custom_left_margin = 0;
 static int custom_right_margin = 0;
+static bool hyphenation_enabled = true;
 static bool using_colors = false;
 static bool disable_more_prompt = false;
 static z_ucs *ncursesw_if_more_prompt;
@@ -696,6 +697,24 @@ static int parse_config_parameter(char *key, char *value)
       set_custom_right_cell_margin(long_value);
     return 0;
   }
+  else if (strcasecmp(key, "disable-hyphenation") == 0)
+  {
+    if (
+        (value == NULL)
+        ||
+        (*value == 0)
+        ||
+        (strcmp(value, "true") == 0)
+       )
+    {
+      hyphenation_enabled = true;
+    }
+    else
+    {
+      hyphenation_enabled = false;
+    }
+    return 0;
+  }
   else
   {
     return screen_cell_interface->parse_config_parameter(key, value);
@@ -875,7 +894,7 @@ static void link_interface_to_story(struct z_story *story)
         true,
         0,
         false,
-        true);
+        hyphenation_enabled);
   }
 
   active_z_window_id = 0;
@@ -887,7 +906,7 @@ static void link_interface_to_story(struct z_story *story)
       true,
       0,
       false,
-      true);
+      hyphenation_enabled);
 
   // First, set default colors for the screen, the clear it to correctly
   // initialize everything with the desired colors.
