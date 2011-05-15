@@ -707,9 +707,9 @@ static int parse_config_parameter(char *key, char *value)
         ||
         (strcmp(value, "true") == 0)
        )
-      hyphenation_enabled = true;
-    else
       hyphenation_enabled = false;
+    else
+      hyphenation_enabled = true;
     return 0;
   }
   else if (strcasecmp(key, "disable-color") == 0)
@@ -768,8 +768,6 @@ static void link_interface_to_story(struct z_story *story)
   int bytes_to_allocate;
   int len;
   int i;
-  char *config_value1, *config_value2;
-  //short color_code;
 
   TRACE_LOG("Linking screen interface to cell interface.\n");
   screen_cell_interface->link_interface_to_story(story);
