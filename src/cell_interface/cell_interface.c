@@ -97,6 +97,7 @@ static int custom_left_margin = 0;
 static int custom_right_margin = 0;
 static bool hyphenation_enabled = true;
 static bool using_colors = false;
+static bool color_disabled = false;
 static bool disable_more_prompt = false;
 static z_ucs *ncursesw_if_more_prompt;
 static z_ucs *ncursesw_if_score_string;
@@ -706,12 +707,23 @@ static int parse_config_parameter(char *key, char *value)
         ||
         (strcmp(value, "true") == 0)
        )
-    {
       hyphenation_enabled = true;
-    }
     else
-    {
       hyphenation_enabled = false;
+    return 0;
+  }
+  else if (strcasecmp(key, "disable-color") == 0)
+  {
+    if (
+        (value == NULL)
+        ||
+        (*value == 0)
+        ||
+        (strcmp(value, "true") == 0)
+       )
+    {
+      color_disabled = true;
+      using_colors = false;
     }
     return 0;
   }
@@ -765,18 +777,10 @@ static void link_interface_to_story(struct z_story *story)
 
   if (ver >= 5)
   {
-    config_value1 = get_configuration_value("enable-color");
-    config_value2 = get_configuration_value("disable-color");
     if (
-        // Either if configuration tell us to fore-enable color,
-        ( (config_value1 != NULL) && (strcasecmp(config_value1, "true") == 0) )
-        ||
-        // Or if color is available and not disabled by user,
-        (
-         (screen_cell_interface->is_colour_available() == true)
-         &&
-         ( (config_value2 == NULL) || (strcasecmp(config_value2, "true") != 0) )
-        )
+        (color_disabled == false)
+        &&
+        (screen_cell_interface->is_colour_available() == true)
        )
     {
       // we'll be using colors for this story.
@@ -908,7 +912,7 @@ static void link_interface_to_story(struct z_story *story)
       false,
       hyphenation_enabled);
 
-  // First, set default colors for the screen, the clear it to correctly
+  // First, set default colors for the screen, then clear it to correctly
   // initialize everything with the desired colors.
   if (using_colors == true)
     screen_cell_interface->set_colour(

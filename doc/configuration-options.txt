@@ -39,11 +39,14 @@
  disable-hyphenation
  [...]
 
+ disable-color
+ Force libfizmo to disabled color mode, even if the output interface reports
+ that color is available.
 
 
 
  ---------
 
- CVS-Id: $Id: configuration-options.txt,v 1.1 2011-05-14 15:02:16 chrender Exp $
- CVS-Revision: $Revision: 1.1 $
+ CVS-Id: $Id: configuration-options.txt,v 1.2 2011-05-15 13:22:34 chrender Exp $
+ CVS-Revision: $Revision: 1.2 $
 
