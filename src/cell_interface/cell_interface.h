@@ -37,6 +37,9 @@
 
 #include "../screen_interface/screen_cell_interface.h"
 
+#define MAX_MARGIN_SIZE 100
+#define MAX_MARGIN_AS_STRING_LEN 4
+
 z_colour default_foreground_colour;
 z_colour default_background_colour;
 

@@ -142,6 +142,11 @@ static struct z_screen_cell_interface *screen_cell_interface = NULL;
 static int *current_input_size, *current_input_scroll_x, *current_input_index;
 static int *current_input_display_width, *current_input_x, *current_input_y;
 
+static char last_left_margin_config_value_as_string[MAX_MARGIN_AS_STRING_LEN];
+static char last_right_margin_config_value_as_string[MAX_MARGIN_AS_STRING_LEN];
+
+static char *config_option_names[] = {
+  "left-margin", "right-margin", "disable-hyphenation", "disable-color", NULL };
 
 static void refresh_cursor(int window_id)
 {
@@ -683,7 +688,7 @@ static int parse_config_parameter(char *key, char *value)
     long_value = strtol(value, &last, 10);
     if (value + strlen(value) != last)
       return -1;
-    if (long_value > 0)
+    if ( (long_value > 0) && (long_value <= MAX_MARGIN_SIZE) )
       set_custom_left_cell_margin(long_value);
     return 0;
   }
@@ -694,7 +699,7 @@ static int parse_config_parameter(char *key, char *value)
     long_value = strtol(value, &last, 10);
     if (value + strlen(value) != last)
       return -1;
-    if (long_value > 0)
+    if ( (long_value > 0) && (long_value <= MAX_MARGIN_SIZE) )
       set_custom_right_cell_margin(long_value);
     return 0;
   }
@@ -723,7 +728,20 @@ static int parse_config_parameter(char *key, char *value)
        )
     {
       color_disabled = true;
-      using_colors = false;
+    }
+    return 0;
+  }
+  else if (strcasecmp(key, "enable-color") == 0)
+  {
+    if (
+        (value == NULL)
+        ||
+        (*value == 0)
+        ||
+        (strcmp(value, "true") == 0)
+       )
+    {
+      color_disabled = false;
     }
     return 0;
   }
@@ -731,6 +749,51 @@ static int parse_config_parameter(char *key, char *value)
   {
     return screen_cell_interface->parse_config_parameter(key, value);
   }
+}
+
+
+static char *get_config_value(char *key)
+{
+  if (strcasecmp(key, "left-margin") == 0)
+  {
+    snprintf(last_left_margin_config_value_as_string, MAX_MARGIN_AS_STRING_LEN,
+        "%d", custom_left_margin);
+    return last_left_margin_config_value_as_string;
+  }
+  else if (strcasecmp(key, "right-margin") == 0)
+  {
+    snprintf(last_right_margin_config_value_as_string, MAX_MARGIN_AS_STRING_LEN,
+        "%d", custom_right_margin);
+    return last_right_margin_config_value_as_string;
+  }
+  else if (strcasecmp(key, "disable-hyphenation") == 0)
+  {
+    return hyphenation_enabled == false
+      ? config_true_value
+      : config_false_value;
+  }
+  else if (strcasecmp(key, "disable-color") == 0)
+  {
+    return color_disabled == true
+      ? config_true_value
+      : config_false_value;
+  }
+  else if (strcasecmp(key, "enable-color") == 0)
+  {
+    return color_disabled == false
+      ? config_true_value
+      : config_false_value;
+  }
+  else
+  {
+    return screen_cell_interface->get_config_value(key);
+  }
+}
+
+
+static char **get_config_option_names()
+{
+  return config_option_names;
 }
 
 
@@ -2978,6 +3041,8 @@ static struct z_screen_interface z_cell_interface =
   &get_default_background_colour,
   &get_total_width_in_pixels_of_text_sent_to_output_stream_3,
   &parse_config_parameter,
+  &get_config_value,
+  &get_config_option_names,
   &link_interface_to_story,
   &reset_interface,
   &cell_close_interface,

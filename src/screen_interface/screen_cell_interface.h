@@ -37,6 +37,8 @@ struct z_screen_cell_interface
   bool (*is_bold_face_available)();
   bool (*is_italic_available)();
   int (*parse_config_parameter)(char *key, char *value);
+  char* (*get_config_value)(char *key);
+  char** (*get_config_option_names)();
   void (*link_interface_to_story)(struct z_story *story);
   void (*reset_interface)();
   int (*close_interface)(z_ucs *error_message);
