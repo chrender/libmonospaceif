@@ -687,7 +687,11 @@ static int parse_config_parameter(char *key, char *value)
       return -1;
     long_value = strtol(value, &last, 10);
     if (value + strlen(value) != last)
+    {
+      free(value);
       return -1;
+    }
+    free(value);
     if ( (long_value > 0) && (long_value <= MAX_MARGIN_SIZE) )
       set_custom_left_cell_margin(long_value);
     return 0;
@@ -698,7 +702,11 @@ static int parse_config_parameter(char *key, char *value)
       return -1;
     long_value = strtol(value, &last, 10);
     if (value + strlen(value) != last)
+    {
+      free(value);
       return -1;
+    }
+    free(value);
     if ( (long_value > 0) && (long_value <= MAX_MARGIN_SIZE) )
       set_custom_right_cell_margin(long_value);
     return 0;
@@ -710,11 +718,12 @@ static int parse_config_parameter(char *key, char *value)
         ||
         (*value == 0)
         ||
-        (strcmp(value, "true") == 0)
+        (strcmp(value, config_true_value) == 0)
        )
       hyphenation_enabled = false;
     else
       hyphenation_enabled = true;
+    free(value);
     return 0;
   }
   else if (strcasecmp(key, "disable-color") == 0)
@@ -724,11 +733,12 @@ static int parse_config_parameter(char *key, char *value)
         ||
         (*value == 0)
         ||
-        (strcmp(value, "true") == 0)
+        (strcmp(value, config_true_value) == 0)
        )
-    {
       color_disabled = true;
-    }
+    else
+      color_disabled = false;
+    free(value);
     return 0;
   }
   else if (strcasecmp(key, "enable-color") == 0)
@@ -738,11 +748,12 @@ static int parse_config_parameter(char *key, char *value)
         ||
         (*value == 0)
         ||
-        (strcmp(value, "true") == 0)
+        (strcmp(value, config_true_value) == 0)
        )
-    {
       color_disabled = false;
-    }
+    else
+      color_disabled = true;
+    free(value);
     return 0;
   }
   else
