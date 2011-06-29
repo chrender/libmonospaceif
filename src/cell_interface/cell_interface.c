@@ -676,38 +676,26 @@ static uint8_t get_total_width_in_pixels_of_text_sent_to_output_stream_3()
 static int parse_config_parameter(char *key, char *value)
 {
   long long_value;
-  char *last;
+  char *endptr;
 
   TRACE_LOG("cell-if parsing config param key \"%s\", value \"%s\".\n",
       key, value != NULL ? value : "(null)");
 
-  if (strcasecmp(key, "left-margin") == 0)
+  if (
+      (strcasecmp(key, "left-margin") == 0)
+      ||
+      (strcasecmp(key, "right-margin") == 0)
+     )
   {
-    if (value == NULL)
+    if ( (value == NULL) || (strlen(value) == 0) )
       return -1;
-    long_value = strtol(value, &last, 10);
-    if (value + strlen(value) != last)
-    {
-      free(value);
-      return -1;
-    }
+    long_value = strtol(value, &endptr, 10);
     free(value);
-    if ( (long_value > 0) && (long_value <= MAX_MARGIN_SIZE) )
+    if (*endptr != 0)
+      return -1;
+    if (strcasecmp(key, "left-margin") == 0)
       set_custom_left_cell_margin(long_value);
-    return 0;
-  }
-  else if (strcasecmp(key, "right-margin") == 0)
-  {
-    if (value == NULL)
-      return -1;
-    long_value = strtol(value, &last, 10);
-    if (value + strlen(value) != last)
-    {
-      free(value);
-      return -1;
-    }
-    free(value);
-    if ( (long_value > 0) && (long_value <= MAX_MARGIN_SIZE) )
+    else
       set_custom_right_cell_margin(long_value);
     return 0;
   }
