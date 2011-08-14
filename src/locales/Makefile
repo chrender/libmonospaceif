@@ -10,7 +10,8 @@ ifneq ($(ENABLE_OPTIMIZATION),)
 override CFLAGS += -O2
 endif
 
-LIBFIZMO_CFLAGS = $(shell pkg-config --cflags libfizmo)
+LIBFIZMO_CFLAGS = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+ --cflags libfizmo)
 
 
 .PHONY : clean

@@ -15,7 +15,8 @@ ifneq ($(ENABLE_TRACING),)
 override CFLAGS += -DENABLE_TRACING=
 endif
 
-LIBFIZMO_CFLAGS = $(shell pkg-config --cflags libfizmo)
+LIBFIZMO_CFLAGS = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config  \
+ --cflags libfizmo)
 
 libcellif.a: cell_interface.o ../locales/libcellif_locales.o
 	$(AR) rcs libcellif.a cell_interface.o ../locales/libcellif_locales.o
