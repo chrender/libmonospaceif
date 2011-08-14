@@ -11,9 +11,10 @@ INSTALL_PREFIX = $(HOME)/opt/fizmo
 endif
 
 
-# General:
+# -----
+# General settings:
 ENABLE_OPTIMIZATION = 1
-ENABLE_TRACING = 1
+#ENABLE_TRACING = 1
 #ENABLE_GDB_SYMBOLS = 1
-
+# -----
 
