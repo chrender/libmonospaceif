@@ -1981,7 +1981,7 @@ static void handle_scrolling(int event_type)
 static int16_t read_line(zscii *dest, uint16_t maximum_length,
     uint16_t tenth_seconds, uint32_t verification_routine,
     uint8_t preloaded_input, int *tenth_seconds_elapsed,
-    bool UNUSED(disable_command_history), bool UNUSED(return_on_escape))
+    bool disable_command_history, bool return_on_escape)
 {
   z_ucs input, buf;
   int timeout_millis = -1, event_type, i;
@@ -2469,18 +2469,22 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
         }
       }
       else if (
+          (disable_command_history == false)
+          &&
           (
-           (event_type == EVENT_WAS_CODE_CURSOR_UP)
-           &&
-           (cmd_history_index < command_history_nof_entries)
+           (
+            (event_type == EVENT_WAS_CODE_CURSOR_UP)
+            &&
+            (cmd_history_index < command_history_nof_entries)
+           )
+           ||
+           (
+            (event_type == EVENT_WAS_CODE_CURSOR_DOWN)
+            &&
+            (cmd_history_index != 0)
+           )
           )
-          ||
-          (
-           (event_type == EVENT_WAS_CODE_CURSOR_DOWN)
-           &&
-           (cmd_history_index != 0)
-          )
-          )
+         )
       {
         TRACE_LOG("old history index: %d.\n", cmd_history_index);
 
@@ -2597,6 +2601,14 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
         input_index = input_size;
         refresh_cursor(active_z_window_id);
         screen_cell_interface->update_screen();
+      }
+      else if (event_type == EVENT_WAS_CODE_ESC)
+      {
+        if (return_on_escape == true)
+        {
+          input_in_progress = false;
+          input_size = -2;
+        }
       }
     }
 
