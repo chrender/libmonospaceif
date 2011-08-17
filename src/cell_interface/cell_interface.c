@@ -318,18 +318,31 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
       // At the end of the line
       if (z_windows[window_number]->ycursorpos
           == z_windows[window_number]->ysize)
-        screen_cell_interface->copy_area(
-            z_windows[window_number]->ypos,
-            z_windows[window_number]->xpos,
-            z_windows[window_number]->ypos+1,
-            z_windows[window_number]->xpos,
-            z_windows[window_number]->ysize-1,
-            z_windows[window_number]->xsize);
+      {
+        if ( (window_number == 0) || (ver == 6) )
+        {       
+          screen_cell_interface->copy_area(
+              z_windows[window_number]->ypos,
+              z_windows[window_number]->xpos,
+              z_windows[window_number]->ypos+1,
+              z_windows[window_number]->xpos,
+              z_windows[window_number]->ysize-1,
+              z_windows[window_number]->xsize);
+          z_windows[window_number]->xcursorpos
+            = 1 + z_windows[window_number]->leftmargin;
+        }
+        else
+        {
+          // In case we're not in a version 6 game and inside the upper
+          // window, let cursor stay put at the end of the window.
+        }
+      }
       else
+      { 
         z_windows[window_number]->ycursorpos++;
-
-      z_windows[window_number]->xcursorpos
-        = 1 + z_windows[window_number]->leftmargin;
+        z_windows[window_number]->xcursorpos
+          = 1 + z_windows[window_number]->leftmargin;
+      }
 
       refresh_cursor(window_number);
       screen_cell_interface->clear_to_eol();
@@ -345,68 +358,71 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
         z_ucs_output++;
       }
 
-      z_windows[window_number]->nof_consecutive_lines_output++;
-
-      TRACE_LOG("consecutive lines: %d.\n",
-          z_windows[window_number]->nof_consecutive_lines_output);
-
-      // FIXME: Implement height 255
-      if (
-          (z_windows[window_number]->nof_consecutive_lines_output
-           == z_windows[window_number]->ysize - 1)
-          &&
-          (disable_more_prompt == false)
-          &&
-          (winch_found == false)
-         )
+      if ( (window_number == 0) || (ver == 6) )
       {
-        TRACE_LOG("Displaying more prompt.\n");
+        z_windows[window_number]->nof_consecutive_lines_output++;
 
-        // Loop below will result in recursive "z_ucs_output_window_target"
-        // call. Dangerous?
-        for (i=0; i<nof_active_z_windows; i++)
-          if (
-              (i != window_number)
-              &&
-              (bool_equal(z_windows[i]->buffering_active, true))
-             )
-            wordwrap_flush_output(z_windows[i]->wordwrapper);
+        TRACE_LOG("consecutive lines: %d.\n",
+            z_windows[window_number]->nof_consecutive_lines_output);
 
-        screen_cell_interface->z_ucs_output(ncursesw_if_more_prompt);
-        screen_cell_interface->update_screen();
-        refresh_cursor(window_number);
-
-        // FIXME: Check for sound interrupt?
-        do
+        // FIXME: Implement height 255
+        if (
+            (z_windows[window_number]->nof_consecutive_lines_output
+             == z_windows[window_number]->ysize - 1)
+            &&
+            (disable_more_prompt == false)
+            &&
+            (winch_found == false)
+           )
         {
-          event_type = screen_cell_interface->get_next_event(&input, 0);
+          TRACE_LOG("Displaying more prompt.\n");
 
-          if (event_type == EVENT_WAS_TIMEOUT)
+          // Loop below will result in recursive "z_ucs_output_window_target"
+          // call. Dangerous?
+          for (i=0; i<nof_active_z_windows; i++)
+            if (
+                (i != window_number)
+                &&
+                (bool_equal(z_windows[i]->buffering_active, true))
+               )
+              wordwrap_flush_output(z_windows[i]->wordwrapper);
+
+          screen_cell_interface->z_ucs_output(ncursesw_if_more_prompt);
+          screen_cell_interface->update_screen();
+          refresh_cursor(window_number);
+
+          // FIXME: Check for sound interrupt?
+          do
           {
-            TRACE_LOG("timeout.\n");
+            event_type = screen_cell_interface->get_next_event(&input, 0);
+
+            if (event_type == EVENT_WAS_TIMEOUT)
+            {
+              TRACE_LOG("timeout.\n");
+            }
           }
+          while (event_type == EVENT_WAS_TIMEOUT);
+
+          z_windows[window_number]->xcursorpos
+            = z_windows[window_number]->leftmargin + 1;
+          refresh_cursor(window_number);
+          screen_cell_interface->clear_to_eol();
+
+          if (event_type == EVENT_WAS_WINCH)
+          {
+            winch_found = true;
+            // The more prompt was "interrupted" by a window screen size
+            // change. We'll now have to initiate a redraw. Since a redraw
+            // is always based on the history, which is not synced to the
+            // output this function receives, we'll now forget about the
+            // current output and then initiate a redraw from before the
+            // next input.
+            break;
+          }
+
+          z_windows[window_number]->nof_consecutive_lines_output = 0;
+          TRACE_LOG("more prompt finished: %d.\n", event_type);
         }
-        while (event_type == EVENT_WAS_TIMEOUT);
-
-        z_windows[window_number]->xcursorpos
-          = z_windows[window_number]->leftmargin + 1;
-        refresh_cursor(window_number);
-        screen_cell_interface->clear_to_eol();
-
-        if (event_type == EVENT_WAS_WINCH)
-        {
-          winch_found = true;
-          // The more prompt was "interrupted" by a window screen size
-          // change. We'll now have to initiate a redraw. Since a redraw
-          // is always based on the history, which is not synced to the
-          // output this function receives, we'll now forget about the
-          // current output and then initiate a redraw from before the
-          // next input.
-          break;
-        }
-
-        z_windows[window_number]->nof_consecutive_lines_output = 0;
-        TRACE_LOG("more prompt finished: %d.\n", event_type);
       }
     }
     else
