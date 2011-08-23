@@ -86,6 +86,8 @@ struct z_screen_cell_interface
   void (*clear_to_eol)();
   void (*clear_area)(int startx, int starty, int xsize, int ysize);
   void (*set_cursor_visibility)(bool visible);
+  z_colour (*get_default_foreground_colour)();
+  z_colour (*get_default_background_colour)();
 };
 
 #endif /* screen_cell_interface_h_INCLUDED */

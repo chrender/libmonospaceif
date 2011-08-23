@@ -40,9 +40,6 @@
 #define MAX_MARGIN_SIZE 100
 #define MAX_MARGIN_AS_STRING_LEN 4
 
-z_colour default_foreground_colour;
-z_colour default_background_colour;
-
 void fizmo_register_screen_cell_interface(struct z_screen_cell_interface
     *screen_cell_interface);
 void new_cell_screen_size(int newysize, int newxsize);

@@ -46,6 +46,7 @@
 #include "interpreter/text.h"
 #include "interpreter/wordwrap.h"
 #include "interpreter/zpu.h"
+#include "interpreter/output.h"
 
 #include "cell_interface.h"
 #include "../screen_interface/screen_cell_interface.h"
@@ -673,13 +674,13 @@ static uint8_t get_font_height_in_units()
 
 static z_colour get_default_foreground_colour()
 {
-  return default_foreground_colour;
+  return screen_cell_interface->get_default_foreground_colour();
 }
 
 
 static z_colour get_default_background_colour()
 {
-  return default_background_colour;
+  return screen_cell_interface->get_default_background_colour();
 }
 
 
@@ -1224,18 +1225,6 @@ static void set_colour(z_colour foreground, z_colour background,
     exit(-102);
   }
 
-  if (foreground == Z_COLOUR_CURRENT)
-    foreground = z_windows[window_number]->foreground_colour;
-
-  if (background == Z_COLOUR_CURRENT)
-    background = z_windows[window_number]->background_colour;
-
-  if (foreground == Z_COLOUR_DEFAULT)
-    foreground = default_foreground_colour;
-
-  if (background == Z_COLOUR_DEFAULT)
-    background = default_background_colour;
-
   highest_valid_window_id
     = nof_active_z_windows - (statusline_window_id >= 0 ? 2 : 1);
 
@@ -1279,48 +1268,6 @@ static void set_colour(z_colour foreground, z_colour background,
 
     index++;
   }
-
-  /*
-      &&
-      (window_number >= 0)
-      &&
-      (window_number <=
-       nof_active_z_windows - (statusline_window_id >= 0 ? 1 : 0))
-     )
-  {
-    if (foreground == Z_COLOUR_CURRENT)
-      foreground = z_windows[window_number]->foreground_colour;
-
-    if (background == Z_COLOUR_CURRENT)
-      background = z_windows[window_number]->background_colour;
-
-    if (foreground == Z_COLOUR_DEFAULT)
-      foreground = default_foreground_colour;
-
-    if (background == Z_COLOUR_DEFAULT)
-      background = default_background_colour;
-
-    z_windows[window_number]->foreground_colour = foreground;
-    z_windows[window_number]->background_colour = background;
-
-    if (bool_equal(z_windows[window_number]->buffering_active, false))
-    {
-      z_windows[window_number]->output_foreground_colour = foreground;
-      z_windows[window_number]->output_background_colour = background;
-    }
-    else
-    {
-      TRACE_LOG("new metadata color(%d), :%d/%d.\n",
-          window_number, foreground, background);
-
-      wordwrap_insert_metadata(
-          z_windows[window_number]->wordwrapper,
-          &wordwrap_output_colour,
-          (void*)(&z_windows[window_number]->window_number),
-          ((uint16_t)foreground | ((uint16_t)(background) << 16)));
-    }
-  }
-  */
 }
 
 
@@ -1372,18 +1319,6 @@ static void history_set_colour(z_colour foreground, z_colour background,
       TRACE_LOG("Colors < -1 not yet implemented.\n");
       exit(-1);
     }
-
-    if (foreground == Z_COLOUR_CURRENT)
-      foreground = z_windows[0]->foreground_colour;
-
-    if (background == Z_COLOUR_CURRENT)
-      background = z_windows[0]->background_colour;
-
-    if (foreground == Z_COLOUR_DEFAULT)
-      foreground = default_foreground_colour;
-
-    if (background == Z_COLOUR_DEFAULT)
-      background = default_background_colour;
 
     if (bool_equal(z_windows[0]->buffering_active, false))
       {
