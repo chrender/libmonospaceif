@@ -73,10 +73,10 @@ struct z_window
   int font_size;
   int line_count;
 
-  bool wrapping_active;
+  bool wrapping;
   bool scrolling_active;
   bool stream2copying_active;
-  bool buffering_active;
+  bool buffering;
 
   // Attributes for internal use:
   int window_number;
@@ -242,7 +242,7 @@ static void flush_all_buffered_windows()
   int i;
 
   for (i=0; i<nof_active_z_windows; i++)
-    if (bool_equal(z_windows[i]->buffering_active, true))
+    if (bool_equal(z_windows[i]->buffering, true))
       wordwrap_flush_output(z_windows[i]->wordwrapper);
 }
 
@@ -260,7 +260,6 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
 
   update_output_colours(window_number);
   update_output_text_style(window_number);
-
   refresh_cursor(window_number);
 
   TRACE_LOG("output-window-target, win %d, %dx%d.\n",
@@ -277,11 +276,49 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
     space_on_line = z_windows[window_number]->xsize
       -  z_windows[window_number]->rightmargin
       - (z_windows[window_number]->xcursorpos - 1);
+
+    TRACE_LOG("space on line: %d, xcursorpos: %d.\n",
+        space_on_line, z_windows[window_number]->xcursorpos - 1);
+
+    // Find a suitable spot to break the line. Check if data contains some
+    // newline char.
     linebreak = z_ucs_chr(z_ucs_output, Z_UCS_NEWLINE);
+
+    // In case we cannot put anymore on this line anyway, simple advance
+    // to the next newline or finish output.
+    if ( (space_on_line <= 0)
+        && (z_windows[window_number]->wrapping == false) )
+    {
+      // If wrapping is not allowed and there's either no newline found or
+      // we're at the bottom of the window, simply quit.
+      if ( (linebreak == NULL) 
+          ||
+          (z_windows[window_number]->ycursorpos
+           == z_windows[window_number]->ysize) )
+        return;
+
+      // Else we can advance to the next line.
+      z_ucs_output = linebreak + 1;
+      z_windows[window_number]->xcursorpos
+        = 1 + z_windows[window_number]->leftmargin;
+      z_windows[window_number]->ycursorpos++;
+      continue;
+    }
+
+    if (space_on_line < 0)
+    {
+      // This may happen in case the cursor moved off the right side of
+      // a non-wrapping window.
+      space_on_line = 0;
+    }
+
+    // In case no newline was found or in case the found newline is too far
+    // away to fit on the current line ...
     if ( (linebreak == NULL) || (linebreak - z_ucs_output > space_on_line) )
     {
-      // Either no newline found or remaining line is too long. Check if
-      // the rest of the line fits onto screen.
+      // ... test if the rest of the line fits on screen. If it doesn't
+      // we'll put as much on the line as possible and break after that.
+
       linebreak 
         = (signed)z_ucs_len(z_ucs_output) > space_on_line
         ? z_ucs_output + space_on_line
@@ -292,65 +329,82 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
     // not work if margins are used and probably (untested) if a window
     // is not at the left side.
 
+    // In case we're breaking in the middle of the line, we'll have to
+    // put a '\0' there and store the original data in "buf".
     if (linebreak != NULL)
     {
       TRACE_LOG("linebreak found.\n");
       buf = *linebreak;
       *linebreak = 0;
     }
-    else
-      buf = 0;
 
     TRACE_LOG("buf: %d\n", buf);
 
     TRACE_LOG("Output at %d/%d:\"",
         z_windows[window_number]->xcursorpos,
         z_windows[window_number]->ycursorpos);
+    refresh_cursor(window_number);
     TRACE_LOG_Z_UCS(z_ucs_output);
+
     TRACE_LOG("\".\n");
 
+    // Output data as far space on the line permits.
     screen_cell_interface->z_ucs_output(z_ucs_output);
+    z_windows[window_number]->xcursorpos += z_ucs_len(z_ucs_output);
 
     if (linebreak != NULL)
     {
+      // At the end of the line
+      TRACE_LOG("At end of line.\n");
+
+      // At this point we know we've just finalized one line and
+      // have to enter a new one.
+
+      /*
+      if (z_windows[window_number]->wrapping == false)
+      {
+        z_ucs_output = linebreak;
+        continue;
+      }
+      */
+
+      // In order to keep clean margins, remove current style.
       screen_cell_interface->set_text_style(0);
 
-      TRACE_LOG("At end of line.\n");
-      // At the end of the line
-      if (z_windows[window_number]->ycursorpos
-          == z_windows[window_number]->ysize)
+      if ( (z_windows[window_number]->ycursorpos
+            == z_windows[window_number]->ysize)
+          && (z_windows[window_number]->wrapping == true) )
       {
-        if ( (window_number == 0) || (ver == 6) )
-        {       
-          screen_cell_interface->copy_area(
-              z_windows[window_number]->ypos,
-              z_windows[window_number]->xpos,
-              z_windows[window_number]->ypos+1,
-              z_windows[window_number]->xpos,
-              z_windows[window_number]->ysize-1,
-              z_windows[window_number]->xsize);
-          z_windows[window_number]->xcursorpos
-            = 1 + z_windows[window_number]->leftmargin;
-        }
-        else
-        {
-          // In case we're not in a version 6 game and inside the upper
-          // window, let cursor stay put at the end of the window.
-        }
+        // Due to the if clause regarding wrapping above, at this point we
+        // now we're allowed to scroll at the bottom of the window.
+        screen_cell_interface->copy_area(
+            z_windows[window_number]->ypos,
+            z_windows[window_number]->xpos,
+            z_windows[window_number]->ypos+1,
+            z_windows[window_number]->xpos,
+            z_windows[window_number]->ysize-1,
+            z_windows[window_number]->xsize);
       }
       else
       { 
+        // If we're not at the bottom of the window, simply move to next line.
         z_windows[window_number]->ycursorpos++;
-        z_windows[window_number]->xcursorpos
-          = 1 + z_windows[window_number]->leftmargin;
       }
 
+      // Clear line, including left margin, to EOL.
+      z_windows[window_number]->xcursorpos = 1;
       refresh_cursor(window_number);
       screen_cell_interface->clear_to_eol();
 
+      // Move cursor to right margin and re-activate current style setting.
+      z_windows[window_number]->xcursorpos
+        = 1 + z_windows[window_number]->leftmargin;
+      refresh_cursor(window_number);
       screen_cell_interface->set_text_style(
           z_windows[window_number]->output_text_style);
 
+      // Restore char at linebreak and additionally skip newline if
+      // required.
       *linebreak = buf;
       z_ucs_output = linebreak;
       if (*z_ucs_output == Z_UCS_NEWLINE)
@@ -359,7 +413,7 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
         z_ucs_output++;
       }
 
-      if ( (window_number == 0) || (ver == 6) )
+      if (z_windows[window_number]->wrapping == true)
       {
         z_windows[window_number]->nof_consecutive_lines_output++;
 
@@ -384,7 +438,7 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
             if (
                 (i != window_number)
                 &&
-                (bool_equal(z_windows[i]->buffering_active, true))
+                (bool_equal(z_windows[i]->buffering, true))
                )
               wordwrap_flush_output(z_windows[i]->wordwrapper);
 
@@ -427,10 +481,7 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
       }
     }
     else
-    {
-      z_windows[active_z_window_id]->xcursorpos += z_ucs_len(z_ucs_output);
-      break;
-    }
+      z_ucs_output += z_ucs_len(z_ucs_output);
   }
 
   TRACE_LOG("z_ucs_output_window_target finished.\n");
@@ -817,13 +868,15 @@ static void z_ucs_output(z_ucs *z_ucs_output)
 {
   TRACE_LOG("Output: \"");
   TRACE_LOG_Z_UCS(z_ucs_output);
-  TRACE_LOG("\" to window %d.\n", active_z_window_id);
+  TRACE_LOG("\" to window %d, buffering: %d.\n",
+      active_z_window_id,
+      z_windows[active_z_window_id]->buffering);
 
   if (active_z_window_id == -1)
     screen_cell_interface->z_ucs_output(z_ucs_output);
   else
   {
-    if (bool_equal(z_windows[active_z_window_id]->buffering_active, false))
+    if (bool_equal(z_windows[active_z_window_id]->buffering, false))
     {
       update_output_colours(active_z_window_id);
       update_output_text_style(active_z_window_id);
@@ -963,10 +1016,8 @@ static void link_interface_to_story(struct z_story *story)
     z_windows[i]->font_type = 0;
     z_windows[i]->font_size = 0;
     z_windows[i]->line_count = 0;
-
-    z_windows[i]->wrapping_active = false;
-
-    z_windows[i]->buffering_active = ((ver != 6) && (i != 0)) ? false : true;
+    z_windows[i]->wrapping = (i == 0) ? true : false;
+    z_windows[i]->buffering = ((ver == 6) || (i == 0)) ? true : false;
 
     z_windows[i]->wordwrapper = wordwrap_new_wrapper(
         z_windows[i]->xsize-z_windows[i]->leftmargin-z_windows[i]->rightmargin,
@@ -1112,7 +1163,7 @@ static void split_window(int16_t nof_lines)
 
       TRACE_LOG("delta %d\n", lines_delta);
 
-      if (bool_equal(z_windows[0]->buffering_active, true))
+      if (bool_equal(z_windows[0]->buffering, true))
         wordwrap_flush_output(z_windows[0]->wordwrapper);
 
       z_windows[0]->ysize -= lines_delta;
@@ -1166,7 +1217,7 @@ static void erase_window(int16_t window_number)
     // (in Versions 5 and later) and selects the lower screen. The same
     // operation should happen at the start of a game (Z-Spec 8.7.3.3).
 
-    if (bool_equal(z_windows[window_number]->buffering_active, true))
+    if (bool_equal(z_windows[window_number]->buffering, true))
       wordwrap_flush_output(z_windows[window_number]->wordwrapper);
 
     update_output_colours(window_number);
@@ -1197,7 +1248,7 @@ static void set_text_style(z_style text_style)
 
   for (i=0; i<nof_active_z_windows; i++)
   {
-    if (bool_equal(z_windows[i]->buffering_active, false))
+    if (bool_equal(z_windows[i]->buffering, false))
       z_windows[i]->output_text_style = text_style;
     else
       wordwrap_insert_metadata(
@@ -1249,7 +1300,7 @@ static void set_colour(z_colour foreground, z_colour background,
   {
     TRACE_LOG("Processing window %d.\n", index);
 
-    if (bool_equal(z_windows[index]->buffering_active, false))
+    if (bool_equal(z_windows[index]->buffering, false))
     {
       z_windows[index]->output_foreground_colour = foreground;
       z_windows[index]->output_background_colour = background;
@@ -1282,7 +1333,7 @@ static void history_set_text_style(z_style text_style)
   if (refresh_count_mode == false)
   {
     TRACE_LOG("historic-text-style: %d\n", text_style);
-    if (bool_equal(z_windows[0]->buffering_active, false))
+    if (bool_equal(z_windows[0]->buffering, false))
       z_windows[0]->output_text_style = text_style;
     else
       wordwrap_insert_metadata(
@@ -1320,7 +1371,7 @@ static void history_set_colour(z_colour foreground, z_colour background,
       exit(-1);
     }
 
-    if (bool_equal(z_windows[0]->buffering_active, false))
+    if (bool_equal(z_windows[0]->buffering, false))
       {
         z_windows[0]->output_foreground_colour = foreground;
         z_windows[0]->output_background_colour = background;
@@ -1343,7 +1394,7 @@ static void history_z_ucs_output(z_ucs *output)
   TRACE_LOG_Z_UCS(output);
   TRACE_LOG("\".\n");
 
-  if (bool_equal(z_windows[0]->buffering_active, false))
+  if (bool_equal(z_windows[0]->buffering, false))
     z_ucs_output_refresh_destination(output, NULL);
   else
     wordwrap_wrap_z_ucs(refresh_wordwrapper, output);
@@ -1366,31 +1417,6 @@ static void refresh_input_line()
 
   if (input_line_on_screen == false)
     return;
-
-  /*
-  TRACE_LOG("input-x-before: %d\n", *current_input_x);
-  TRACE_LOG("input-y-before: %d\n", *current_input_y);
-
-  TRACE_LOG("current_input_display_width: %d\n", *current_input_display_width);
-  TRACE_LOG("%d/%d/%d y:%d,%d\n", z_windows[0]->xpos, z_windows[0]->xsize,
-      *current_input_x, z_windows[0]->ypos, z_windows[0]->ysize);
-
-  *current_input_display_width
-    = z_windows[0]->xpos + z_windows[0]->xsize - *current_input_x;
-
-  if (*current_input_y > z_windows[0]->ypos + z_windows[0]->ysize - 1)
-    *current_input_y = z_windows[0]->ypos + z_windows[0]->ysize - 1;
-
-  current_input_size = &input_size;
-  current_input_scroll_x = &input_scroll_x;
-  current_input_index = &input_index;
-  current_input_display_width = &input_display_width;
-  current_input_x = &input_x;
-  current_input_y = &input_y;
-  current_input_buffer = input_buffer;
-
-  TRACE_LOG("current_input_display_width: %d\n", *current_input_display_width);
-  */
 
   if (active_z_window_id != 0)
   {
@@ -2879,7 +2905,7 @@ static void set_window(int16_t window_number)
 
 static void set_cursor(int16_t line, int16_t column, int16_t window_number)
 {
-  if (bool_equal(z_windows[window_number]->buffering_active, true))
+  if (bool_equal(z_windows[window_number]->buffering, true))
     wordwrap_flush_output(z_windows[window_number]->wordwrapper);
 
   if (column < 0)
@@ -2916,7 +2942,9 @@ static void set_cursor(int16_t line, int16_t column, int16_t window_number)
 
     z_windows[window_number]->xcursorpos
       = column > z_windows[window_number]->xsize
-      ? z_windows[window_number]->xsize
+      ? (z_windows[window_number]->wrapping == false
+          ? z_windows[window_number]->xsize + 1
+          : z_windows[window_number]->xsize)
       : column;
 
     refresh_cursor(window_number);
