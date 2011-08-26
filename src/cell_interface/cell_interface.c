@@ -251,7 +251,8 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
     void *window_number_as_void)
 {
   int window_number = *((int*)window_number_as_void);
-  z_ucs buf, input, event_type;
+  z_ucs input, event_type;
+  z_ucs buf = 0; // init to 0 to calm compiler.
   z_ucs *linebreak;
   int space_on_line, i;
 
@@ -336,9 +337,8 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
       TRACE_LOG("linebreak found.\n");
       buf = *linebreak;
       *linebreak = 0;
+      TRACE_LOG("buf: %d\n", buf);
     }
-
-    TRACE_LOG("buf: %d\n", buf);
 
     TRACE_LOG("Output at %d/%d:\"",
         z_windows[window_number]->xcursorpos,
