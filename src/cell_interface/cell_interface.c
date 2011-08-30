@@ -868,9 +868,10 @@ static void z_ucs_output(z_ucs *z_ucs_output)
 {
   TRACE_LOG("Output: \"");
   TRACE_LOG_Z_UCS(z_ucs_output);
+  TRACE_LOG("Output: \"");
   TRACE_LOG("\" to window %d, buffering: %d.\n",
       active_z_window_id,
-      z_windows[active_z_window_id]->buffering);
+      active_z_window_id != -1 ? z_windows[active_z_window_id]->buffering : -1);
 
   if (active_z_window_id == -1)
     screen_cell_interface->z_ucs_output(z_ucs_output);
