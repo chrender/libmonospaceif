@@ -19,7 +19,7 @@ LIBFIZMO_CFLAGS = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
 all: libcellif_locales.o
 
 libcellif_locales.o: libcellif_locales.c
-	$(CC) $(CFLAGS) $(LIBFIZMO_CFLAGS) -c libcellif_locales.c
+	"$(CC)" $(CFLAGS) $(LIBFIZMO_CFLAGS) -c libcellif_locales.c
 
 clean:
 	rm -f *.o

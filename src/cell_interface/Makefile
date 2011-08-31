@@ -19,10 +19,10 @@ LIBFIZMO_CFLAGS = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config  \
  --cflags libfizmo)
 
 libcellif.a: cell_interface.o ../locales/libcellif_locales.o
-	$(AR) rcs libcellif.a cell_interface.o ../locales/libcellif_locales.o
+	"$(AR)" rcs libcellif.a cell_interface.o ../locales/libcellif_locales.o
 
 cell_interface.o: cell_interface.h cell_interface.c
-	$(CC) $(CFLAGS) -c cell_interface.c $(LIBFIZMO_CFLAGS)
+	"$(CC)" $(CFLAGS) -c cell_interface.c $(LIBFIZMO_CFLAGS)
 
 ../locales/libcellif_locales.o::
 	cd ../locales ; make
