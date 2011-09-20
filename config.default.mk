@@ -1,7 +1,7 @@
 
 CC = gcc
 AR = ar
-override CFLAGS = -Wall -Wextra
+override CFLAGS += -Wall -Wextra
 
 INSTALL_PREFIX = $(DESTDIR)/usr/local
 
