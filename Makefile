@@ -36,7 +36,7 @@ install-dev:: libcellif.a
 	echo >>"$(PKGFILE)"
 	echo 'Name: libcellif' >>"$(PKGFILE)"
 	echo 'Description: libcellif' >>"$(PKGFILE)"
-	echo 'Version: 0.7.0' >>"$(PKGFILE)"
+	echo 'Version: 0.7.1' >>"$(PKGFILE)"
 	echo 'Requires: libfizmo >= 0.7 ' >>"$(PKGFILE)"
 	echo 'Requires.private:' >>"$(PKGFILE)"
 	echo 'Cflags: -I$(DEV_INSTALL_PREFIX)/include/fizmo ' >>"$(PKGFILE)"
