@@ -3,7 +3,6 @@
 
 include config.mk
 
-
 ifeq ($(fizmo_build_prefix),)
   fizmo_build_prefix="$(prefix)"
 endif
