@@ -48,7 +48,7 @@ install-locales::
 	for l in `cd src/locales ; ls -d ??_??`; \
 	do \
 	  mkdir -p "$(localedir)/$$l" ; \
-	  cp src/locales/$$l/*.txt \ "$(localedir)/$$l" ; \
+	  cp src/locales/$$l/*.txt "$(localedir)/$$l" ; \
 	done
 
 clean::
