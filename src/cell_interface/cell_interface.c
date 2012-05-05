@@ -108,7 +108,7 @@ static int active_z_window_id = -1;
 static z_colour current_output_foreground_colour = -3;
 static z_colour current_output_background_colour = -3;
 static z_style current_output_text_style = -1;
-static WORDWRAP *refresh_wordwrapper;
+static WORDWRAP *refresh_wordwrapper = NULL;
 static int refresh_newline_counter;
 static bool refresh_count_mode;
 static int refresh_lines_to_skip;
@@ -1119,6 +1119,7 @@ static int cell_close_interface(z_ucs *error_message)
 {
   int event_type;
   z_ucs input;
+  int i;
 
   if ( (error_message == NULL) && (interface_open == true) )
   {
@@ -1136,7 +1137,39 @@ static int cell_close_interface(z_ucs *error_message)
   }
 
   screen_cell_interface->close_interface(error_message);
+
+  free(libcellif_more_prompt);  
+  free(libcellif_score_string);
+  free(libcellif_turns_string);
+
+  if (refresh_wordwrapper != NULL)
+  {
+    wordwrap_destroy_wrapper(refresh_wordwrapper);
+    refresh_wordwrapper = NULL;
+  }
+
+  for (i=0; i<nof_active_z_windows; i++)
+  {
+    if (z_windows[i]->wordwrapper != NULL)
+    {
+      if (z_windows[i] != NULL)
+      {
+        wordwrap_destroy_wrapper(z_windows[i]->wordwrapper);
+        z_windows[i]->wordwrapper = NULL;
+        free(z_windows[i]);
+        z_windows[i] = NULL;
+      }
+    }
+  }
+
+  if (z_windows != NULL)
+  {
+    free(z_windows);
+    z_windows = NULL;
+  }
+
   interface_open = false;
+
   return 0;
 }
 
@@ -1722,6 +1755,8 @@ static void refresh_screen()
         }
       }
     }
+
+    free(blockbuf_line);
   }
 
   update_output_colours(0);
