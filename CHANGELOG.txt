@@ -3,6 +3,8 @@
  + 0.7.3 was finished at about (?).
  - Merged Andrew Plotkin's iOS-fizmo changes: Adapted to new function
   "prompt_for_filename" in screen-interface.
+ - Fixed screen interface invocation to not use timeout if not actually
+   required by the game.
 
    Version 0.7.2
  + 0.7.2 was finished at about Fri Mar 9 21:01:12 CET 2012.
