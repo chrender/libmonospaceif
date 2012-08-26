@@ -1,24 +1,20 @@
 
-.PHONY : all install install-dev install-locales clean distclean
+AUTOMAKE_OPTIONS = -Wno-override
 
-include config.mk
+localedir = $(datarootdir)/fizmo/locales
 
-ifeq ($(fizmo_build_prefix),)
-  fizmo_build_prefix="$(DESTDIR)$(prefix)"
+if FIZMO_BUILD_PREFIX_EMPTY
+  fizmo_build_prefix=$(DESTDIR)$(prefix)
 endif
+
 PKG_DIR = $(fizmo_build_prefix)/lib/pkgconfig
 PKGFILE = $(PKG_DIR)/libcellif.pc
 
+SUBDIRS = src/cell_interface .
+noinst_LIBRARIES = libcellif.a
 
-all: libcellif.a
-
-libcellif.a: src/cell_interface/libcellif.a
+libcellif.a:
 	mv src/cell_interface/libcellif.a .
-
-src/cell_interface/libcellif.a::
-	cd src/cell_interface ; make
-
-install:: install-locales
 
 install-dev:: libcellif.a
 	mkdir -p "$(fizmo_build_prefix)"/lib/fizmo
@@ -36,8 +32,8 @@ install-dev:: libcellif.a
 	echo >>"$(PKGFILE)"
 	echo 'Name: libcellif' >>"$(PKGFILE)"
 	echo 'Description: libcellif' >>"$(PKGFILE)"
-	echo 'Version: 0.7.3' >>"$(PKGFILE)"
-	echo 'Requires: libfizmo >= 0.7.3 ' >>"$(PKGFILE)"
+	echo 'Version: 0.7.4' >>"$(PKGFILE)"
+	echo 'Requires: libfizmo >= 0.7.4 ' >>"$(PKGFILE)"
 	echo 'Requires.private:' >>"$(PKGFILE)"
 	echo 'Cflags: -I$(fizmo_build_prefix)/include/fizmo ' >>"$(PKGFILE)"
 	echo 'Libs: -L$(fizmo_build_prefix)/lib/fizmo -lcellif'  >>"$(PKGFILE)"
@@ -51,11 +47,4 @@ install-locales::
 	  cp src/locales/$$l/*.txt "$(DESTDIR)$(localedir)/$$l" ; \
 	done
 
-clean::
-	cd src/cell_interface ; make clean
-	cd src/locales ; make clean
-
-distclean:: clean
-	rm -f libcellif.a
-	cd src/cell_interface ; make distclean
 
