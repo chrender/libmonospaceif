@@ -2330,58 +2330,53 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
                 ((z_windows[active_z_window_id]->xpos
                   + z_windows[active_z_window_id]->xcursorpos - 1) - input_x));
 
-            /*
-            // Check if there's now enough input to fill the whole line.
-            if (input_size - input_scroll_x < input_display_width)
-            {
-            // If there's not enough input, we'll have to fill the column
-            // directly right after the last char with a space.
-            char_buf[0] = Z_UCS_SPACE;
-            }
-            else
-            {
-            // In case there's enough input we'll take the char to fill the
-            // rightmost input column to fill with from the input.
-            char_buf[0] = 'X';
-            }
-            screen_cell_interface->goto_yx(input_y,
-            input_x + input_display_width - 1);
-            screen_cell_interface->z_ucs_output(char_buf);
-            screen_cell_interface->goto_yx(input_y,
-            input_x + input_display_width - 1);
-            */
-
             z_windows[active_z_window_id]->xcursorpos--;
             refresh_cursor(active_z_window_id);
 
             screen_cell_interface->update_screen();
           }
+        }
+      }
+      else if (event_type == EVENT_WAS_CODE_DELETE)
+      {
+        // We only have something to do if the cursor is not after the end of
+        // input.
+        if (input_index < input_size)
+        {
+          // We always have to move all chars from the cursor position onward
+          // one position to the left.
+          memmove(
+              input_buffer + input_index,
+              input_buffer + input_index + 1,
+              sizeof(z_ucs)*(input_size - input_index));
 
+          input_size--;
 
-          /*
-             if (z_windows[active_z_window_id]->xpos
-             + z_windows[active_z_window_id]->xcursorpos -1
-             > input_x)
-             z_windows[active_z_window_id]->xcursorpos--;
+          TRACE_LOG("Moving %d chars from  %d/%d to %d/%d.\n",
+              input_display_width -
+              ((z_windows[active_z_window_id]->xpos
+                + z_windows[active_z_window_id]->xcursorpos) - input_x),
+              z_windows[active_z_window_id]->xpos
+              + z_windows[active_z_window_id]->xcursorpos,
+              input_y,
+              z_windows[active_z_window_id]->xpos
+              + z_windows[active_z_window_id]->xcursorpos - 1,
+              input_y);
 
-          // The position of the newly created space (from the copy_area above)
-          // on the screen is stored in pos.
-          pos
-          = z_windows[active_z_window_id]->xpos
-          + z_windows[active_z_window_id]->xcursorpos - 1
-          + (input_size - input_index);
-          maxpos
-          = z_windows[active_z_window_id]->xpos
-          + z_windows[active_z_window_id]->xsize - 1
-          - z_windows[active_z_window_id]->rightmargin;
-          if (pos > maxpos)
-          pos = maxpos;
+          screen_cell_interface->copy_area(
+              input_y,
+              z_windows[active_z_window_id]->xpos
+              + z_windows[active_z_window_id]->xcursorpos - 1,
+              input_y,
+              z_windows[active_z_window_id]->xpos
+              + z_windows[active_z_window_id]->xcursorpos,
+              1,
+              input_display_width -
+              ((z_windows[active_z_window_id]->xpos
+                + z_windows[active_z_window_id]->xcursorpos) - input_x));
 
-          screen_cell_interface->goto_yx(input_y, pos);
-          char_buf[0] = 'X';
-          screen_cell_interface->z_ucs_output(char_buf);
           refresh_cursor(active_z_window_id);
-          */
+          screen_cell_interface->update_screen();
         }
       }
       else if (event_type == EVENT_WAS_CODE_CURSOR_LEFT)
@@ -2755,6 +2750,16 @@ static int read_char(uint16_t tenth_seconds, uint32_t verification_routine,
       else if (event_type == EVENT_WAS_CODE_CURSOR_RIGHT)
       {
         result = 132;
+        input_in_progress = false;
+      }
+      else if (event_type == EVENT_WAS_CODE_BACKSPACE)
+      {
+        result = 8;
+        input_in_progress = false;
+      }
+      else if (event_type == EVENT_WAS_CODE_DELETE)
+      {
+        result = 127;
         input_in_progress = false;
       }
       else if (event_type == EVENT_WAS_TIMEOUT)
