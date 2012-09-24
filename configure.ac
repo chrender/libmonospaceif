@@ -5,7 +5,7 @@ AC_ARG_ENABLE([tracing],
  [],
  [enable_tracing=no])
 
-AC_INIT([libcellif], [0.7.4])
+AC_INIT([libcellif], [0.7.5])
 
 
 AC_CONFIG_AUX_DIR([.])
