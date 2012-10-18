@@ -1,6 +1,12 @@
 
    Version 0.7.5
  - Implemented delete in read_line and read_char.
+ - CTRL-R will now redraw the screen. Contrary to CTRL-L, which refreshes
+   the screen based on the current layout, CTRL-R will reconstruct the
+   latest output based on the output history. This will help to display
+   output which is hidden in case a game clears the screen, writes some
+   text into the top line and then turns on the score line which then
+   overlays the topmost line.
 
    Version 0.7.4
  + 0.7.4 was finished at about Mon Sep 17 22:14:52 CEST 2012.

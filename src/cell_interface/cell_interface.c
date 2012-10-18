@@ -2190,6 +2190,13 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
           //refresh_screen();
           screen_cell_interface->redraw_screen_from_scratch();
         }
+        else if (input == 18)
+        {
+          TRACE_LOG("Got CTRL-R.\n");
+          new_cell_screen_size(
+              screen_cell_interface->get_screen_height(),
+              screen_cell_interface->get_screen_width());
+        }
         else if (
             // Check if we have a valid input char.
             (unicode_char_to_zscii_input_char(input) != 0xff)
