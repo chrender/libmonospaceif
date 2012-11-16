@@ -2491,7 +2491,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
            (
             (event_type == EVENT_WAS_CODE_CURSOR_UP)
             &&
-            (cmd_history_index < command_history_nof_entries)
+            (cmd_history_index < get_number_of_stored_commands())
            )
            ||
            (
@@ -2505,18 +2505,8 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
         TRACE_LOG("old history index: %d.\n", cmd_history_index);
 
         cmd_history_index += event_type == EVENT_WAS_CODE_CURSOR_UP ? 1 : -1;
-        if (cmd_history_index - 1 > command_history_newest_entry)
-          cmd_index
-            =  command_history_nof_entries
-            - (cmd_history_index - 1)
-            -  command_history_newest_entry;
-        else
-          cmd_index
-            = command_history_newest_entry - (cmd_history_index - 1);
-
-        cmd_history_ptr
-          = command_history_buffer
-          + command_history_entries[cmd_index];
+        cmd_history_ptr = get_command_from_history(cmd_history_index - 1);
+        TRACE_LOG("cmd_history_ptr: %p.\n", cmd_history_ptr);
 
         if (cmd_history_index > 0)
         {
