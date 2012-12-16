@@ -41,7 +41,7 @@ PKGFILE = $(PKG_DIR)/libcellif.pc
 SUBDIRS = src/cell_interface .
 noinst_LIBRARIES = libcellif.a
 
-libcellif.a:
+libcellif.a::
 	cd src/cell_interface ; make
 	mv src/cell_interface/libcellif.a .
 

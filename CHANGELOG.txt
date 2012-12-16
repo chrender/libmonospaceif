@@ -1,4 +1,7 @@
 
+   Version 0.7.6
+ - Minor fix for libcell build target.
+
    Version 0.7.5
  + 0.7.5 was finished at about Fri Nov 30 14:02:28 CET 2012.
  - Implemented delete in read_line and read_char.
