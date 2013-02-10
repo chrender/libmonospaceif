@@ -2009,7 +2009,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
   int input_display_width; // Width of the input line on-screen.
   int input_x, input_y; // Leftmost position of the input line on-screen.
   z_ucs input_buffer[maximum_length + 1];
-  int cmd_history_index = 0, cmd_index;
+  int cmd_history_index = 0;
   zscii *cmd_history_ptr;
   int current_tenth_seconds = 0;
   int timed_routine_retval, index;
