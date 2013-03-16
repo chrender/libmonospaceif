@@ -61,14 +61,14 @@ install-dev:: libcellif.a
 	echo >>"$(PKGFILE)"
 	echo 'Name: libcellif' >>"$(PKGFILE)"
 	echo 'Description: libcellif' >>"$(PKGFILE)"
-	echo 'Version: 0.7.6' >>"$(PKGFILE)"
+	echo 'Version: 0.7.7' >>"$(PKGFILE)"
 	echo 'Requires: libfizmo >= 0.7.4 ' >>"$(PKGFILE)"
 	echo 'Requires.private:' >>"$(PKGFILE)"
 	echo 'Cflags: -I$(fizmo_build_prefix)/include/fizmo ' >>"$(PKGFILE)"
 	echo 'Libs: -L$(fizmo_build_prefix)/lib/fizmo -lcellif'  >>"$(PKGFILE)"
 	echo >>"$(PKGFILE)"
 
-install-locales::
+install-data-local::
 	mkdir -p "$(DESTDIR)$(localedir)"
 	for l in `cd src/locales ; ls -d ??_??`; \
 	do \
