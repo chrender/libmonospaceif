@@ -1,5 +1,6 @@
 
    Version 0.7.7
+ + 0.7.7 was finished at about Wed Jun 5 18:49:00 CEST 2013.
  - Renamed "install-locales" to "install-data-local" build target.
 
    Version 0.7.6
