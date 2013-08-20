@@ -46,7 +46,7 @@ AM_PROG_AR
 
 AM_CONDITIONAL([FIZMO_BUILD_PREFIX_EMPTY], [test "$fizmo_build_prefix" = ""])
 
-PKG_CHECK_MODULES([libfizmo], [libfizmo >= 0.7.4])
+PKG_CHECK_MODULES([libfizmo], [libfizmo >= 0.7.8])
 
 AM_CONDITIONAL([ENABLE_TRACING],
                 [test "$enable_tracing" = "yes"])
