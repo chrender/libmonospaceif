@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<changelog>
+  <change version="0.7.8">
+    <logentry>Adapted to automake version 1.14.</logentry>
+  </change>
+
+  <change version="0.7.7">
+    <datetime day-of-week="Wed" month="Jun" day="5" hour="18"
+      minute="49" second="00" timezone="CEST" year="2013"/>
+    <logentry>Renamed “install-locales” to “install-data-local” build target.</logentry>
+  </change>
+
+  <change version="0.7.6">
+    <datetime day-of-week="Thu" month="Dec" day="27" hour="21"
+      minute="35" second="34" timezone="CET" year="2012"/>
+    <logentry>Minor fix for libcell build target.</logentry>
+  </change>
+
+  <change version="0.7.5">
+    <datetime day-of-week="Fri" month="Nov" day="30" hour="14"
+      minute="02" second="28" timezone="CET" year="2012"/>
+    <logentry>Implemented delete in read_line and read_char.</logentry>
+    <logentry>CTRL-R will now redraw the screen. Contrary to CTRL-L, which refreshes the screen based on the current layout, CTRL-R will reconstruct the latest output based on the output history. This will help to display output which is hidden in case a game clears the screen, writes some text into the top line and then turns on the score line which then overlays the topmost line.</logentry>
+    <logentry>Adapted to new command history interface.</logentry>
+  </change>
+
+  <change version="0.7.4">
+    <datetime day-of-week="Mon" month="Sep" day="17" hour="22"
+      minute="14" second="52" timezone="CEST" year="2012"/>
+    <logentry>Adapted to new autoconf / automake build system.</logentry>
+  </change>
+
+  <change version="0.7.3">
+    <datetime day-of-week="Wed" month="Aug" day="1" hour="21"
+      minute="42" second="17" timezone="CEST" year="2012"/>
+    <logentry>Merged Andrew Plotkin's iOS-fizmo changes: Adapted to new function “prompt_for_filename” in screen-interface.</logentry>
+    <logentry>Fixed screen interface invocation to not use timeout if not actually required by the game.</logentry>
+  </change>
+
+  <change version="0.7.2">
+    <datetime day-of-week="Fri" month="Mar" day="9" hour="21"
+      minute="01" second="12" timezone="CET" year="2012"/>
+    <logentry>Fixed missing $(DESTDIR) variable – should already have been present since version 0.7.1.</logentry>
+  </change>
+
+  <change version="0.7.1">
+    <datetime day-of-week="Sun" month="Nov" day="6" hour="22"
+      minute="44" second="17" timezone="CET" year="2011"/>
+    <logentry>Fixed missing “override” statments for CFLAGS in Makefiles.</logentry>
+    <logentry>Fixed $(DESTDIR) evaluation in config.[default|macports].mk.</logentry>
+    <logentry>Adapted Makefiles and configuration to use standard GNU Makefile variables instead of INSTALL_PATH and FIZMO_BIN_DIR.</logentry>
+  </change>
+
+  <change version="0.7.0">
+    <datetime day-of-week="Sun" month="Sep" day="18" hour="08"
+      minute="41" second="18" timezone="CEST" year="2011"/>
+    <logentry>The “libcellif” interface has been developed out of fizmo's ncursesw interface in version 0.6. It assumes that the screen is up of fixed-width charachter cells – like a standard terminal – and translates all the Z-Machine output operations into “goto-xy”, “print” and similar commands. That means it's possible to implement a cell-based interface without having to worry about window resizes or other Z-Machine related concepts.</logentry>
+    <logentry>The “fizmo-ncurses” interface relies on this library for output.</logentry>
+  </change>
+</changelog>
+

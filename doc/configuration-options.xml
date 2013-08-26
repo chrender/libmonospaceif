@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document title="libcellif configuration option names" date="2011-05-14">
+  <section title="Overview">
+    <p>This file lists all available configuration options for libcellif. Please note that other options may be available depending on the interface which libcellif is linked to. The following list shows all the options that the API understands via the "set_configuration_value" function.</p>
+  </section>
+
+  <section title="Variables">
+    <p>Option values may contain variables. Variables start with a dollar sign $ and are enclosed by parantheses. Example: <tt>$(VARIABLE_NAME)</tt>. The only currently implemented variable is <tt>$(HOME)</tt>, which refers to the current user's home directory.</p>
+  </section>
+
+  <section title="List of valid libcellif option names and values">
+    <ul>
+      <li><tt>left-margin = &lt;margin-size&gt;</tt><br/>This parameter will take an integer value and set the left margin of the main window to the specified number of spaces.</li>
+
+      <li><tt>right-margin = &lt;margin-size&gt;</tt><br/>This parameter will take an integer value and set the right margin of the main window to the specified number of spaces.</li>
+
+      <li><tt>disable-hyphenation</tt><br/>Will completely turn off hyphenation. Useful for languages which are not supported.</li>
+
+      <li><tt>disable-color</tt><br/>Force libfizmo to disabled color mode, even if the output interface reports that color is available.</li>
+    </ul>
+  </section>
+</document>
+
