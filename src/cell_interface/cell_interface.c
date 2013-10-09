@@ -16,7 +16,7 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. The name of the author may not be used to endorse or promote products
  *    derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -292,7 +292,7 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
     {
       // If wrapping is not allowed and there's either no newline found or
       // we're at the bottom of the window, simply quit.
-      if ( (linebreak == NULL) 
+      if ( (linebreak == NULL)
           ||
           (z_windows[window_number]->ycursorpos
            == z_windows[window_number]->ysize) )
@@ -320,7 +320,7 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
       // ... test if the rest of the line fits on screen. If it doesn't
       // we'll put as much on the line as possible and break after that.
 
-      linebreak 
+      linebreak
         = (signed)z_ucs_len(z_ucs_output) > space_on_line
         ? z_ucs_output + space_on_line
         : NULL;
@@ -386,7 +386,7 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
             z_windows[window_number]->xsize);
       }
       else
-      { 
+      {
         // If we're not at the bottom of the window, simply move to next line.
         z_windows[window_number]->ycursorpos++;
       }
@@ -491,7 +491,7 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
 static void z_ucs_output_refresh_destination(z_ucs *z_ucs_output,
     void *UNUSED(window_number_as_void))
 {
-  z_ucs *output_end;
+  z_ucs *output_end, *next_newline;
   z_ucs buf;
 #ifdef ENABLE_TRACING
   z_ucs *ptr = z_ucs_output;
@@ -525,8 +525,8 @@ static void z_ucs_output_refresh_destination(z_ucs *z_ucs_output,
   }
   else
   {
-    TRACE_LOG("Output: %d lines to skip, %d lines to output.\n",
-        refresh_lines_to_skip, refresh_lines_to_output);
+    TRACE_LOG("Output: %d lines to skip, %d lines to output, ptr: %p.\n",
+        refresh_lines_to_skip, refresh_lines_to_output, z_ucs_output);
 
     // First, try to skip lines above output.
     if (refresh_lines_to_skip > 0)
@@ -536,8 +536,9 @@ static void z_ucs_output_refresh_destination(z_ucs *z_ucs_output,
       {
         TRACE_LOG("refresh lines to skip: %d.\n", refresh_lines_to_skip);
 
-        if ((z_ucs_output = z_ucs_chr(z_ucs_output, Z_UCS_NEWLINE)) != NULL)
+        if ((next_newline = z_ucs_chr(z_ucs_output, Z_UCS_NEWLINE)) != NULL)
         {
+          z_ucs_output = next_newline;
           TRACE_LOG("Found newline at %p.\n", z_ucs_output);
           z_ucs_output++;
 
@@ -548,17 +549,20 @@ static void z_ucs_output_refresh_destination(z_ucs *z_ucs_output,
           refresh_lines_to_skip--;
         }
         else
+        {
+          TRACE_LOG("No newline found to skip.\n");
           break;
+        }
       }
     }
 
-    TRACE_LOG("Total output: \"");
+    TRACE_LOG("Total output at %p: \"", z_ucs_output);
     TRACE_LOG_Z_UCS(z_ucs_output);
     TRACE_LOG("\".\n");
 
     // In case we've skipped all lines -- or there are no to skip -- process
     // regular output.
-    if ( (refresh_lines_to_skip == 0) && (refresh_lines_to_output > 0) )
+    if ( (refresh_lines_to_skip == 0) && (refresh_lines_to_output != 0) )
     {
       TRACE_LOG("active window id: %d.\n", active_z_window_id);
       update_output_colours(0);
@@ -567,7 +571,7 @@ static void z_ucs_output_refresh_destination(z_ucs *z_ucs_output,
       output_end = z_ucs_output;
 
       // Find the last line we're supposed to output.
-      while (refresh_lines_to_output > 0)
+      while (refresh_lines_to_output != 0)
       {
         TRACE_LOG("refresh_lines_to_output: %d.\n", refresh_lines_to_output);
         if ((output_end = z_ucs_chr(output_end, Z_UCS_NEWLINE)) != NULL)
@@ -1138,7 +1142,7 @@ static int cell_close_interface(z_ucs *error_message)
 
   screen_cell_interface->close_interface(error_message);
 
-  free(libcellif_more_prompt);  
+  free(libcellif_more_prompt);
   free(libcellif_score_string);
   free(libcellif_turns_string);
 
@@ -1329,7 +1333,7 @@ static void set_colour(z_colour foreground, z_colour background,
   }
   else
     return;
-   
+
   while (index <= end_index)
   {
     TRACE_LOG("Processing window %d.\n", index);
@@ -1504,7 +1508,9 @@ static void refresh_input_line()
 
 static void refresh_screen()
 {
-  int start_y, paragraphs_to_output;
+  int paragraphs_to_output;
+  long chars_in_paragraph;
+  int current_line_length;
   int last_active_z_window_id = -1;
   z_ucs *blockbuf_line;
   int i, j;
@@ -1520,23 +1526,26 @@ static void refresh_screen()
 
   TRACE_LOG("Refreshing screen at %d*%d.\n", screen_width, screen_height);
 
-  refresh_count_mode = true;
+  refresh_count_mode = false;
+  refresh_lines_to_skip = 0;
+  refresh_lines_to_output = -1;
+
+  current_line_length = z_windows[0]->xsize - z_windows[0]->leftmargin
+    - z_windows[0]->rightmargin;
 
   wordwrap_adjust_line_length(
       refresh_wordwrapper,
-      z_windows[0]->xsize - z_windows[0]->leftmargin
-      - z_windows[0]->rightmargin);
+      current_line_length);
 
-  TRACE_LOG("Refreshing wordwrapper using with %d.\n",
-      z_windows[0]->xsize - z_windows[0]->leftmargin
-      - z_windows[0]->rightmargin);
+  TRACE_LOG("Refreshing wordwrapper using width %d.\n", current_line_length);
 
   screen_cell_interface->set_text_style(0);
   erase_window(0);
 
   refresh_newline_counter = 0;
 
-  if ((history = init_history_output(outputhistory[0],&history_target)) == NULL)
+  if ((history = init_history_output(
+          outputhistory[0], &history_target)) == NULL)
     return;
   TRACE_LOG("History: %p\n", history);
 
@@ -1544,44 +1553,28 @@ static void refresh_screen()
       z_windows[0]->ysize);
 
   paragraphs_to_output = 0;
+
   while (refresh_newline_counter < z_windows[0]->ysize)
   {
     TRACE_LOG("Current refresh_newline_counter: %d, paragraphs: %d\n",
         refresh_newline_counter, paragraphs_to_output);
 
-    if (output_rewind_paragraph(history) < 0)
+    if (output_rewind_paragraph(history, &chars_in_paragraph) < 0)
+    {
+      TRACE_LOG("Can't rewind history any further.\n");
       break;
+    }
 
-    TRACE_LOG("Start paragraph repetition.\n");
-    output_repeat_paragraphs(history, 1, false, false);
-    wordwrap_flush_output(refresh_wordwrapper);
-    TRACE_LOG("End paragraph repetition.\n");
-    //wordwrap_set_line_index(refresh_wordwrapper, 0);
+    TRACE_LOG("Chars in last paragraph: %d.\n", chars_in_paragraph);
 
-    refresh_newline_counter++;
     paragraphs_to_output++;
+    refresh_newline_counter
+      += (((chars_in_paragraph - 1) / current_line_length) + 1);
+
+    TRACE_LOG("Last paragraph had %d full lines, counter: %d.\n",
+        (((chars_in_paragraph - 1) / current_line_length) + 1),
+        paragraphs_to_output);
   }
-
-  refresh_count_mode = false;
-  refresh_lines_to_output = z_windows[0]->ysize;
-  //wordwrap_set_line_index(refresh_wordwrapper, 0);
-
-  refresh_lines_to_skip
-    = refresh_newline_counter > z_windows[0]->ysize
-    ? refresh_newline_counter - z_windows[0]->ysize
-    : 0;
-
-  TRACE_LOG("Found %d lines, lines needed: %d.\n",
-      refresh_newline_counter, refresh_lines_to_output);
-
-  start_y
-    = refresh_newline_counter < z_windows[0]->ysize
-    ? z_windows[0]->ysize - refresh_newline_counter
-    : 0;
-
-  z_windows[0]->xcursorpos = 1 + z_windows[0]->leftmargin;
-  z_windows[0]->ycursorpos = z_windows[0]->ypos + start_y;
-  refresh_cursor(0);
 
   disable_more_prompt = true;
 
@@ -1592,7 +1585,7 @@ static void refresh_screen()
 
   if (input_line_on_screen == true)
   {
-    TRACE_LOG("input-pos: %d, width: %d.\n", 
+    TRACE_LOG("input-pos: %d, width: %d.\n",
         z_windows[0]->xpos + z_windows[0]->xcursorpos
         + z_windows[0]->rightmargin,
         z_windows[0]->xsize - 1);
@@ -1844,7 +1837,7 @@ static void handle_scrolling(int event_type)
         while (history_screen_line < top_upscroll_line)
         {
           refresh_newline_counter = 0;
-          if (output_rewind_paragraph(history) < 0)
+          if (output_rewind_paragraph(history, NULL) < -1)
             break;
           TRACE_LOG("Start paragraph repetition.\n");
           output_repeat_paragraphs(history, 1, false, false);
@@ -1960,7 +1953,7 @@ static void handle_scrolling(int event_type)
           TRACE_LOG("(refresh dest)\n");
           TRACE_LOG("check: %d lines left.\n", refresh_lines_to_output);
           if (refresh_lines_to_output > 1)
-            z_ucs_output_refresh_destination(newline_string, NULL); 
+            z_ucs_output_refresh_destination(newline_string, NULL);
           else
             refresh_lines_to_output = 0;
           if (return_code < 0)
@@ -2640,7 +2633,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
     TRACE_LOG("converting:%c\n", input_buffer[i]);
     dest[i] = unicode_char_to_zscii_input_char(input_buffer[i]);
   }
-                                   
+
   TRACE_LOG("len:%d\n", input_size);
   TRACE_LOG("after-readline-ycursorpos: %d.\n", z_windows[0]->ycursorpos);
   return input_size;
@@ -3041,7 +3034,7 @@ static void game_was_restored_and_history_modified()
   {
     refresh_screen();
     //screen_cell_interface->update_screen();
-  } 
+  }
 }
 
 
