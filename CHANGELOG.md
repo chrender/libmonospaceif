@@ -4,6 +4,8 @@
    **Version 0.7.8**
 
  - Adapted to automake version 1.14.
+ - Implemented greatly simplified screen refresh which should improve the redraw behaviour.
+ - Fixed a crash that would occur in case the history buffer didn't hold enough inp ut for some screen refresh cases.
 
 ---
 
