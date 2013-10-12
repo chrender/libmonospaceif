@@ -2079,15 +2079,11 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
 
   input_display_width
     = z_windows[active_z_window_id]->xsize
-    - (z_windows[active_z_window_id]->xcursorpos - 1)
-    - z_windows[active_z_window_id]->rightmargin
-    - preloaded_input;
+    - (z_windows[active_z_window_id]->xcursorpos - 1 - preloaded_input)
+    - z_windows[active_z_window_id]->rightmargin;
 
   TRACE_LOG("input_x:%d, input_y:%d.\n", input_x, input_y);
   TRACE_LOG("input width: %d.\n", input_display_width);
-
-  //REMOVE:
-  //input_display_width = 5;
 
   for (i=0; i<preloaded_input; i++)
     input_buffer[i] = zscii_input_char_to_z_ucs(dest[i]);
@@ -2248,14 +2244,24 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
             input_size++;
 
           TRACE_LOG("xcp %d, rm %d, xs: %d.\n",
-              z_windows[active_z_window_id]->xcursorpos -1,
+              z_windows[active_z_window_id]->xcursorpos,
               z_windows[active_z_window_id]->rightmargin,
               z_windows[active_z_window_id]->xsize);
 
-          if (z_windows[active_z_window_id]->xcursorpos -1
+          if (z_windows[active_z_window_id]->xcursorpos
               + z_windows[active_z_window_id]->rightmargin
-              == z_windows[active_z_window_id]->xsize)
+              == z_windows[active_z_window_id]->xsize) {
+            TRACE_LOG("Input at rightmost position.\n");
+            screen_cell_interface->copy_area(
+                input_y, input_x,
+                input_y, input_x + 1,
+                1, input_display_width - 1);
             input_scroll_x++;
+            char_buf[0] = Z_UCS_SPACE;
+            screen_cell_interface->goto_yx(
+                input_y, input_x + input_display_width - 1);
+            screen_cell_interface->z_ucs_output(char_buf);
+          }
           else
             z_windows[active_z_window_id]->xcursorpos++;
 
@@ -2284,6 +2290,12 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
         // the input.
         if (input_index > 0)
         {
+          TRACE_LOG("input_display_width: %d.\n", input_display_width);
+          TRACE_LOG("xpos: %d.\n", z_windows[active_z_window_id]->xpos);
+          TRACE_LOG("xcursorpos: %d.\n",
+              z_windows[active_z_window_id]->xcursorpos - 1);
+          TRACE_LOG("input_x: %d.\n", input_x);
+
           // We always have to move all chars from the cursor position onward
           // one position to the left.
           memmove(
@@ -2330,9 +2342,14 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
                 ((z_windows[active_z_window_id]->xpos
                   + z_windows[active_z_window_id]->xcursorpos - 1) - input_x));
 
-            z_windows[active_z_window_id]->xcursorpos--;
-            refresh_cursor(active_z_window_id);
+            char_buf[0] = Z_UCS_SPACE;
+            screen_cell_interface->goto_yx(
+                input_y, input_x + input_display_width - 1);
+            screen_cell_interface->z_ucs_output(char_buf);
 
+            z_windows[active_z_window_id]->xcursorpos--;
+
+            refresh_cursor(active_z_window_id);
             screen_cell_interface->update_screen();
           }
         }
@@ -2374,6 +2391,20 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
               input_display_width -
               ((z_windows[active_z_window_id]->xpos
                 + z_windows[active_z_window_id]->xcursorpos) - input_x));
+
+          TRACE_LOG("DEL: size:%d, index:%d, width:%d, input_scroll_x:%d.\n",
+              input_size, input_index, input_display_width, input_scroll_x);
+          // Check whether we have to fill the rightmost column with a
+          // space, of if the input is longer than the screen and if we
+          // have to fill the column with user input.
+          char_buf[0]
+            = input_size - input_scroll_x >= input_display_width
+            ? input_buffer[input_scroll_x + input_display_width]
+            : Z_UCS_SPACE;
+
+          screen_cell_interface->goto_yx(
+              input_y, input_x + input_display_width - 1);
+          screen_cell_interface->z_ucs_output(char_buf);
 
           refresh_cursor(active_z_window_id);
           screen_cell_interface->update_screen();
@@ -2504,7 +2535,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
         if (cmd_history_index > 0)
         {
           input_size = strlen((char*)cmd_history_ptr);
-          if (input_size > input_display_width+1)
+          if (input_size > input_display_width + 1)
           {
             input_scroll_x = input_size - input_display_width;
             z_windows[active_z_window_id]->xcursorpos
