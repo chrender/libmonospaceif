@@ -3,3 +3,4 @@ Score
 Tours
 libcellinterface version \{0s}.
 Pressez n'importe quelle touche pour quitter.
+Function call "\{0s}" aborted due to error.

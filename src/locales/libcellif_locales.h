@@ -38,6 +38,7 @@
 #define i18n_libcellif_TURNS 2
 #define i18n_libcellif_LIBCELLINTERFACE_VERSION_P0S 3
 #define i18n_libcellif_PRESS_ANY_KEY_TO_QUIT 4
+#define i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR 5
 
 extern z_ucs libcellif_module_name[];
 
