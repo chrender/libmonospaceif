@@ -2,10 +2,11 @@
 <changelog>
   <change version="0.7.8">
     <logentry>Adapted to automake version 1.14.</logentry>
-    <logentry>Implemented greatly simplified screen refresh which should improve the redraw behaviour.</logentry>
+    <logentry>Entire re-implementation of screen refresh and scrolling.</logentry>
     <logentry>Fixed a crash that would occur in case the history buffer didn't hold enough input for some screen refresh cases.</logentry>
     <logentry>Fixed incorrect backspace or delete behaviour which could cause in crash in case of small screen sizes combined with the use of preloaded input.</logentry>
     <logentry>Several small text input fixes.</logentry>
+    <logentry>Added “clean-dev” build target for better cleanup of installed development files, which helps debian packaging.</logentry>
   </change>
 
   <change version="0.7.7">
