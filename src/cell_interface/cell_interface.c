@@ -1164,14 +1164,16 @@ static void set_text_style(z_style text_style)
 
   for (i=0; i<nof_active_z_windows; i++)
   {
-    if (bool_equal(z_windows[i]->buffering, false))
-      z_windows[i]->output_text_style = text_style;
-    else
-      wordwrap_insert_metadata(
-          z_windows[i]->wordwrapper,
-          &wordwrap_output_style,
-          (void*)(&z_windows[i]->window_number),
-          (uint32_t)text_style);
+    if (i != statusline_window_id) {
+      if (bool_equal(z_windows[i]->buffering, false))
+        z_windows[i]->output_text_style = text_style;
+      else
+        wordwrap_insert_metadata(
+            z_windows[i]->wordwrapper,
+            &wordwrap_output_style,
+            (void*)(&z_windows[i]->window_number),
+            (uint32_t)text_style);
+    }
   }
 }
 

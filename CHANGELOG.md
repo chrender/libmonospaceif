@@ -9,6 +9,7 @@
  - Fixed incorrect backspace or delete behaviour which could cause in crash in case of small screen sizes combined with the use of preloaded input.
  - Several small text input fixes.
  - Added “clean-dev” build target for better cleanup of installed development files, which helps debian packaging.
+ - Fixed wrong status line display style after restore in v<=3 games.
 
 ---
 

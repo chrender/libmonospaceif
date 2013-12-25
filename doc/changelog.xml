@@ -7,6 +7,7 @@
     <logentry>Fixed incorrect backspace or delete behaviour which could cause in crash in case of small screen sizes combined with the use of preloaded input.</logentry>
     <logentry>Several small text input fixes.</logentry>
     <logentry>Added “clean-dev” build target for better cleanup of installed development files, which helps debian packaging.</logentry>
+    <logentry>Fixed wrong status line display style after restore in v&lt;=3 games.</logentry>
   </change>
 
   <change version="0.7.7">
