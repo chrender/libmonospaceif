@@ -34,7 +34,7 @@
  *
  * About screen refreshes
  *
- * Refreshing the screen or specific lines is done using the "refresh_screen"
+ * Refreshing the screen or specific lines is done using the "refresh_window0"
  * function, which accepts the number of the top line of the area to refresh
  * and the vertical size. It uses fizmo's output history, which allows
  * paragraph-wise repeating of the output which has been produced by the
@@ -60,7 +60,7 @@
  * 2. When cshl exactly corresponds to the top line of the area of refresh,
  *    the cursor is placed in the top-left and output can be started right
  *    away. Output is limited to (y_size) lines. After paragraph output,
- *    refresh_screen is executed recusively, resulting in another step 2
+ *    refresh_window0 is executed recusively, resulting in another step 2
  *    execution.
  *
  * 3. In case cshl is located somewhere inside the refresh area -- not on
@@ -167,7 +167,7 @@ static bool interface_open = false;
 // The "history" is used by the scrolling and and screen-refresh
 // functions. It is allocated as long as scrolling is in
 // progress (means as long as the user only presses page-up or page-down
-// and no output occurs inbetween) and as long as the "refresh_screen"
+// and no output occurs inbetween) and as long as the "refresh_window0"
 // method is active. Otherwise it must be null.
 static history_output *history = NULL;
 
@@ -1315,13 +1315,13 @@ static void refresh_input_line()
 // means that if one paragraph has been repeated and the history pointer
 // advanced accordingly, 1 is returned. In case the history has been
 // rewinded by one last paragraph, -1 is returned.
-static int refresh_screen_inner(int y_size, int y_refresh_top) {
+static int refresh_window0_inner(int y_size, int y_refresh_top) {
   int return_code, lines_left, nof_paragraph_lines;
   int nof_relevant_lines, original_pos;
   int result = 0;
   //z_ucs input;
 
-  TRACE_LOG("refresh_screen_inner(y_size:%d, y_refresh_top:%d)\n",
+  TRACE_LOG("refresh_window0_inner(y_size:%d, y_refresh_top:%d)\n",
       y_size, y_refresh_top);
 
   if (y_size == 0) {
@@ -1406,7 +1406,7 @@ static int refresh_screen_inner(int y_size, int y_refresh_top) {
       }
       current_history_screen_line += nof_paragraph_lines;
       z_windows[0]->lines_to_skip = 0;
-      result += refresh_screen_inner(y_size, y_refresh_top);
+      result += refresh_window0_inner(y_size, y_refresh_top);
     }
   }
   else if (z_windows[0]->scrollback_top_line - (y_refresh_top - 1) - y_size
@@ -1513,7 +1513,7 @@ static int refresh_screen_inner(int y_size, int y_refresh_top) {
       TRACE_LOG("lines_left: %d.\n", lines_left);
 
       if ( (lines_left> 0) && (return_code != 1) ) {
-        result += refresh_screen_inner(lines_left, y_refresh_top);
+        result += refresh_window0_inner(lines_left, y_refresh_top);
       }
     }
   }
@@ -1603,7 +1603,7 @@ static int refresh_screen_inner(int y_size, int y_refresh_top) {
     TRACE_LOG("scrollback_top_line: %d, chsl: %d\n",
         z_windows[0]->scrollback_top_line, current_history_screen_line);
 
-    result += refresh_screen_inner(
+    result += refresh_window0_inner(
         z_windows[0]->scrollback_top_line
         - (y_refresh_top - 1) - current_history_screen_line,
         y_refresh_top);
@@ -1731,7 +1731,7 @@ static void init_output_history() {
 //   scollback position, which means that no matter how far the user scrolled
 //   up, line 1 always marks the top line of the window.
 //
-static void refresh_screen(int y_size, int y_refresh_top, bool reset_history) {
+static void refresh_window0(int y_size, int y_refresh_top, bool reset_history) {
   int last_active_z_window_id = -1;
 
   if ( (reset_history == true) || (history == NULL) ) {
@@ -1747,7 +1747,7 @@ static void refresh_screen(int y_size, int y_refresh_top, bool reset_history) {
   }
   disable_more_prompt = true;
 
-  TRACE_LOG("refresh_screen(ysize:%d, y_refresh_top:%d, reset_history:%d)\n",
+  TRACE_LOG("refresh_window0(ysize:%d, y_refresh_top:%d, reset_history:%d)\n",
       y_size, y_refresh_top, reset_history);
 
   /*
@@ -1757,7 +1757,7 @@ static void refresh_screen(int y_size, int y_refresh_top, bool reset_history) {
   }
   */
 
-  refresh_screen_inner(y_size, y_refresh_top);
+  refresh_window0_inner(y_size, y_refresh_top);
   screen_cell_interface->set_text_style(0);
 
   disable_more_prompt = false;
@@ -1771,7 +1771,7 @@ static void refresh_screen(int y_size, int y_refresh_top, bool reset_history) {
   if ( (z_windows[0]->scrollback_top_line <= z_windows[0]->ysize)
       && (input_line_on_screen == true) ) {
     // current_input_x and current_input_y have already been adjusted
-    // in "refresh_screen_inner".
+    // in "refresh_window0_inner".
 
     //z_windows[0]->ycursorpos = *current_input_y - 1;
 
@@ -1794,6 +1794,154 @@ static void refresh_screen(int y_size, int y_refresh_top, bool reset_history) {
   TRACE_LOG("end: current_history_screen_line: %d, scrollback_top_line: %d\n",
       current_history_screen_line,
       z_windows[0]->scrollback_top_line);
+}
+
+
+static void refresh_screen() {
+  z_ucs *blockbuf_line;
+  int i, j;
+  int block_index, output_index;
+
+  erase_window(0);
+  //z_windows[0]->scrollback_top_line = z_windows[0]->ysize - 1;
+  refresh_window0(z_windows[0]->ysize, 1, true);
+
+  if (ver <= 3)
+    display_status_line();
+
+  // FIXME: Add color and styles.
+  if (z_windows[1]->ysize > 0) {
+    TRACE_LOG("Redrawing upper window (%d).\n", z_windows[1]->xsize);
+    blockbuf_line = fizmo_malloc(sizeof(z_ucs) * (z_windows[1]->xsize + 1));
+
+    //upper_font = upper_window_buffer->content[0].font;
+    current_output_text_style
+      = upper_window_buffer->content[0].style;
+    current_output_foreground_colour
+      = upper_window_buffer->content[0].foreground_colour;
+    current_output_background_colour
+      = upper_window_buffer->content[0].background_colour;
+
+    // z_windows[window_number]->output_text_style
+
+    //screen_cell_interface->set_font(upper_font);
+    screen_cell_interface->set_text_style(current_output_text_style);
+    if (using_colors == true)
+      screen_cell_interface->set_colour(
+          current_output_foreground_colour, current_output_background_colour);
+
+    for (i=0; i<z_windows[1]->ysize; i++) {
+      TRACE_LOG("Line %d.\n", i);
+      block_index = i * upper_window_buffer->width;
+
+      j = 0;
+      screen_cell_interface->goto_yx(i + (ver <= 3 ? 2 : 1), 1);
+
+      while ( (j < z_windows[1]->xsize)
+          && (j < upper_window_buffer->width)) {
+        output_index = 0;
+
+        while (
+            (j < z_windows[1]->xsize)
+            &&
+            (j < upper_window_buffer->width)
+            /*
+            &&
+            (upper_window_buffer->content[block_index].font
+             == upper_font)
+            */
+            &&
+            (upper_window_buffer->content[block_index].style
+             == current_output_text_style)
+            &&
+            (
+             (upper_window_buffer->content[block_index].foreground_colour
+              == current_output_foreground_colour)
+             ||
+             (upper_window_buffer->content[block_index].foreground_colour == 0)
+            )
+            &&
+            (
+             (upper_window_buffer->content[block_index].background_colour
+              == current_output_background_colour)
+             ||
+             (upper_window_buffer->content[block_index].background_colour == 0)
+            )) {
+          blockbuf_line[output_index]
+            = upper_window_buffer->content[block_index].character;
+          block_index++;
+          output_index++;
+          j++;
+        }
+        blockbuf_line[output_index] = 0;
+        screen_cell_interface->z_ucs_output(blockbuf_line);
+
+        if ( (j < z_windows[1]->xsize)
+            && (j < upper_window_buffer->width)) {
+          TRACE_LOG("New style/colour at column %d.\n", j);
+          /*
+          if (upper_window_buffer->content[block_index].font != upper_font)
+          {
+            upper_font = upper_window_buffer->content[block_index].font;
+            screen_cell_interface->set_font(upper_font);
+          }
+          */
+
+          if (upper_window_buffer->content[block_index].style
+              != current_output_text_style) {
+            current_output_text_style
+              = upper_window_buffer->content[block_index].style;
+            screen_cell_interface->set_text_style(current_output_text_style);
+          }
+
+          if (
+              (
+               (upper_window_buffer->content[block_index].foreground_colour
+                != current_output_foreground_colour)
+               &&
+               (upper_window_buffer->content[block_index].foreground_colour!=0)
+              )
+              ||
+              (
+               (upper_window_buffer->content[block_index].background_colour
+                != current_output_background_colour)
+               &&
+               (upper_window_buffer->content[block_index].background_colour!=0)
+              )
+             )
+          {
+            if (upper_window_buffer->content[block_index].foreground_colour!=0)
+              current_output_foreground_colour
+                = upper_window_buffer->content[block_index].foreground_colour;
+            if (upper_window_buffer->content[block_index].background_colour!=0)
+              current_output_background_colour
+                = upper_window_buffer->content[block_index].background_colour;
+            if (using_colors == true)
+              screen_cell_interface->set_colour(
+                  current_output_foreground_colour,
+                  current_output_background_colour);
+          }
+        }
+      }
+    }
+
+    /*
+    screen_cell_interface->set_text_style(
+        current_output_text_style);
+
+    screen_cell_interface->set_colour(
+        z_windows[window_number]->output_foreground_colour,
+        z_windows[window_number]->output_background_colour);
+    */
+
+    free(blockbuf_line);
+
+    update_output_colours(0);
+    update_output_text_style(0);
+    refresh_cursor(0);
+  }
+
+  screen_cell_interface->redraw_screen_from_scratch();
 }
 
 
@@ -1852,7 +2000,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
     z_ucs_output_window_target(
         newline_string,
         (void*)(&z_windows[active_z_window_id]->window_number));
-    //refresh_screen(-1, -1);
+    //refresh_window0(-1, -1);
   }
 
   if (winch_found == true)
@@ -1993,7 +2141,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
             z_windows[0]->ypos,
             screen_width,
             scroll_area_ysize);
-        refresh_screen(
+        refresh_window0(
             scroll_area_ysize,
             1,
             false);
@@ -2015,7 +2163,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
             + (z_windows[0]->ysize - scroll_area_ysize),
             screen_width,
             scroll_area_ysize);
-        refresh_screen(
+        refresh_window0(
             scroll_area_ysize,
             1 + (z_windows[0]->ysize - scroll_area_ysize),
             false);
@@ -2032,7 +2180,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
       if (z_windows[0]->scrollback_top_line > z_windows[0]->ysize) {
         erase_window(0);
         z_windows[0]->scrollback_top_line = z_windows[0]->ysize;
-        refresh_screen(z_windows[0]->ysize, 1, false);
+        refresh_window0(z_windows[0]->ysize, 1, false);
         screen_cell_interface->set_cursor_visibility(true);
         screen_cell_interface->update_screen();
       }
@@ -2054,7 +2202,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
         upscroll_hit_top = false;
         destroy_history_output(history);
         screen_cell_interface->set_cursor_visibility(true);
-        refresh_screen();
+        refresh_window0();
       }
       */
 
@@ -2067,11 +2215,10 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
         else if (input == 12)
         {
           TRACE_LOG("Got CTRL-L.\n");
-          //refresh_screen();
-          erase_window(0);
-          //z_windows[0]->scrollback_top_line = z_windows[0]->ysize - 1;
-          refresh_screen(z_windows[0]->ysize, 1, true);
-          screen_cell_interface->redraw_screen_from_scratch();
+          //erase_window(0);
+          //refresh_window0(z_windows[0]->ysize, 1, true);
+          //screen_cell_interface->redraw_screen_from_scratch();
+          refresh_screen();
         }
         else if (input == 18)
         {
@@ -2634,7 +2781,7 @@ static int read_char(uint16_t tenth_seconds, uint32_t verification_routine,
         upscroll_hit_top = false;
         destroy_history_output(history);
         screen_cell_interface->set_cursor_visibility(true);
-        refresh_screen();
+        refresh_window0();
       }
       */
 
@@ -2643,10 +2790,10 @@ static int read_char(uint16_t tenth_seconds, uint32_t verification_routine,
         if (input == 12)
         {
           TRACE_LOG("Got CTRL-L.\n");
-          erase_window(0);
-          //z_windows[0]->scrollback_top_line = z_windows[0]->ysize - 1;
-          refresh_screen(z_windows[0]->ysize, 1, true);
-          screen_cell_interface->redraw_screen_from_scratch();
+          //erase_window(0);
+          //refresh_window0(z_windows[0]->ysize, 1, true);
+          //screen_cell_interface->redraw_screen_from_scratch();
+          refresh_screen();
         }
         else
         {
@@ -2977,7 +3124,7 @@ static void game_was_restored_and_history_modified()
         z_windows[0]->ysize);
     //input_line_on_screen_buf = input_line_on_screen;
     //input_line_on_screen = true;
-    refresh_screen(z_windows[0]->ysize, 1, true);
+    refresh_window0(z_windows[0]->ysize, 1, true);
     if (history != NULL) {
       destroy_history_output(history);
       history = NULL;
@@ -3087,14 +3234,16 @@ void set_custom_right_cell_margin(int width)
 void new_cell_screen_size(int newysize, int newxsize)
 {
   int i, dy, status_offset = statusline_window_id > 0 ? 1 : 0;
-  int consecutive_lines_buffer[nof_active_z_windows];
+  //int consecutive_lines_buffer[nof_active_z_windows];
 
   if ( (newysize < 1) || (newxsize < 1) )
     return;
 
+  /*
   for (i=0; i<nof_active_z_windows; i++)
     consecutive_lines_buffer[i] = z_windows[i]->nof_consecutive_lines_output;
   disable_more_prompt = true;
+  */
 
   dy = newysize - screen_height;
 
@@ -3179,13 +3328,15 @@ void new_cell_screen_size(int newysize, int newxsize)
       z_windows[i]->xcursorpos = z_windows[i]->xsize;
   }
 
+  refresh_screen();
+  /*
   erase_window(0);
   if (history != NULL) {
     destroy_history_output(history);
     history = NULL;
   }
   z_windows[0]->scrollback_top_line = z_windows[0]->ysize;
-  refresh_screen(-1, 1, true);
+  refresh_window0(-1, 1, true);
 
   for (i=0; i<nof_active_z_windows; i++)
     z_windows[i]->nof_consecutive_lines_output = consecutive_lines_buffer[i];
@@ -3193,6 +3344,7 @@ void new_cell_screen_size(int newysize, int newxsize)
 
   //screen_cell_interface->redraw_screen_from_scratch();
   screen_cell_interface->update_screen();
+  */
 }
 
 
