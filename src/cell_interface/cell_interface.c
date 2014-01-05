@@ -1261,7 +1261,7 @@ static void refresh_input_line()
 
   TRACE_LOG("Refreshing input line.");
 
-  if ( (input_line_on_screen == false) || (*current_input_size < 1) )
+  if (input_line_on_screen == false)
     return;
 
   if (active_z_window_id != 0)
@@ -1270,31 +1270,33 @@ static void refresh_input_line()
     switch_to_window(0);
   }
 
-  TRACE_LOG("out:%d, %d, %d\n",
-      *current_input_size, *current_input_scroll_x,
-      *current_input_display_width);
+  if (*current_input_size > 0) {
+    TRACE_LOG("out:%d, %d, %d\n",
+        *current_input_size, *current_input_scroll_x,
+        *current_input_display_width);
 
-  // Set output style to current window 0 style.
-  update_output_colours(0);
-  update_output_text_style(0);
+    // Set output style to current window 0 style.
+    update_output_colours(0);
+    update_output_text_style(0);
 
-  TRACE_LOG("Current input size: %d.\n", *current_input_size);
+    TRACE_LOG("Current input size: %d.\n", *current_input_size);
 
-  if (*current_input_size - *current_input_scroll_x
-      >= *current_input_display_width + 1)
-  {
-    buf = current_input_buffer[
-      *current_input_scroll_x + *current_input_display_width];
-    current_input_buffer[
-      *current_input_scroll_x + *current_input_display_width] = 0;
+    if (*current_input_size - *current_input_scroll_x
+        >= *current_input_display_width + 1)
+    {
+      buf = current_input_buffer[
+        *current_input_scroll_x + *current_input_display_width];
+      current_input_buffer[
+        *current_input_scroll_x + *current_input_display_width] = 0;
+    }
+
+    screen_cell_interface->goto_yx(*current_input_y, *current_input_x);
+    screen_cell_interface->z_ucs_output(
+        current_input_buffer + *current_input_scroll_x);
+    if (buf != 0)
+      current_input_buffer[
+        *current_input_scroll_x + *current_input_display_width] = buf;
   }
-
-  screen_cell_interface->goto_yx(*current_input_y, *current_input_x);
-  screen_cell_interface->z_ucs_output(
-      current_input_buffer + *current_input_scroll_x);
-  if (buf != 0)
-    current_input_buffer[
-      *current_input_scroll_x + *current_input_display_width] = buf;
 
   TRACE_LOG("cii: %d, cis: %d\n",
       *current_input_index, *current_input_scroll_x);
