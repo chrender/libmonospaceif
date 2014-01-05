@@ -1261,7 +1261,7 @@ static void refresh_input_line()
 
   TRACE_LOG("Refreshing input line.");
 
-  if (input_line_on_screen == false)
+  if ( (input_line_on_screen == false) || (*current_input_size < 1) )
     return;
 
   if (active_z_window_id != 0)
@@ -1277,6 +1277,8 @@ static void refresh_input_line()
   // Set output style to current window 0 style.
   update_output_colours(0);
   update_output_text_style(0);
+
+  TRACE_LOG("Current input size: %d.\n", *current_input_size);
 
   if (*current_input_size - *current_input_scroll_x
       >= *current_input_display_width + 1)
