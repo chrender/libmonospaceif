@@ -172,7 +172,7 @@ static bool interface_open = false;
 static history_output *history = NULL;
 
 static int current_history_screen_line = -1;
-static bool current_history_hit_top;
+static bool current_history_hit_top = false;
 
 // This flag is set to true when an read_line is currently underway. It's
 // used by screen refresh functions like "new_cell_screen_size".
@@ -1259,7 +1259,7 @@ static void refresh_input_line()
   z_ucs buf = 0;
   int last_active_z_window_id = -1;
 
-  TRACE_LOG("Refreshing input line.");
+  TRACE_LOG("Refreshing input line.\n");
 
   if (input_line_on_screen == false)
     return;
@@ -1315,21 +1315,30 @@ static void refresh_input_line()
 }
 
 
-// This function will return the number of paragraph history advances. That
-// means that if one paragraph has been repeated and the history pointer
-// advanced accordingly, 1 is returned. In case the history has been
-// rewinded by one last paragraph, -1 is returned.
-static int refresh_window0_inner(int y_size, int y_refresh_top) {
+// This function returns true if at least one line of the desired output
+// could be displayed. It returns false in case nothing could be shown (which
+// means that the desired area-to-show is outside the recorded history).
+//
+// If nof_paragraph_diff is non-NULL, this function will modify it by the
+// number of paragraph history advances. That means that if one paragraph
+// has been repeated and the history pointer advanced accordingly, 1 is
+// added to the value references by this pointer. In case the history has been
+// rewinded by one last paragraph, 1 is being subtracted.
+static bool refresh_window0_inner(int y_size, int y_refresh_top,
+    int *nof_paragraph_diff) {
   int return_code, lines_left, nof_paragraph_lines;
   int nof_relevant_lines, original_pos;
-  int result = 0;
+  int my_paragraph_diff = 0;
+  bool result = false;
   //z_ucs input;
 
   TRACE_LOG("refresh_window0_inner(y_size:%d, y_refresh_top:%d)\n",
       y_size, y_refresh_top);
+  TRACE_LOG("lowermargin %d, uppermargin %d.\n",
+      z_windows[0]->lowermargin, z_windows[0]->uppermargin);
 
   if (y_size == 0) {
-    return 0;
+    return false;
   }
   else if (y_size < 0) {
     y_size = z_windows[0]->ysize;
@@ -1359,7 +1368,7 @@ static int refresh_window0_inner(int y_size, int y_refresh_top) {
       y_refresh_top,
       y_refresh_top + (y_size - 1),
       z_windows[0]->scrollback_top_line - (y_refresh_top - 1),
-      z_windows[0]->scrollback_top_line - (y_refresh_top - 1) + (y_size - 1));
+      z_windows[0]->scrollback_top_line - ((y_refresh_top - 1) + (y_size - 1)));
 
   // Please note:
   // In the very first iteration, current_history_screen_line == 0 which means
@@ -1374,9 +1383,10 @@ static int refresh_window0_inner(int y_size, int y_refresh_top) {
     //    afterwards.
 
     TRACE_LOG("Scrolling case #0.\n");
-    z_windows[0]->lines_to_skip = INT32_MAX;
 
-    if ((return_code = output_rewind_paragraph(history, NULL)) < 0) {
+    return_code = output_rewind_paragraph(history, NULL);
+
+    if (return_code < 0) {
       i18n_translate_and_exit(
           libcellif_module_name,
           i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR,
@@ -1387,9 +1397,11 @@ static int refresh_window0_inner(int y_size, int y_refresh_top) {
       // In case we've hit the buffer back there's nothing more to do since
       // we're below the area to redraw.
       current_history_hit_top = true;
+      result = false;
     }
     else {
-      result--;
+      my_paragraph_diff--;
+      z_windows[0]->lines_to_skip = INT32_MAX;
       z_windows[0]->nof_consecutive_lines_output = 0;
       wordwrap_set_line_index(z_windows[0]->wordwrapper, 0);
       z_windows[0]->xcursorpos = 1 + z_windows[0]->leftmargin;
@@ -1410,7 +1422,7 @@ static int refresh_window0_inner(int y_size, int y_refresh_top) {
       }
       current_history_screen_line += nof_paragraph_lines;
       z_windows[0]->lines_to_skip = 0;
-      result += refresh_window0_inner(y_size, y_refresh_top);
+      result = refresh_window0_inner(y_size, y_refresh_top, &my_paragraph_diff);
     }
   }
   else if (z_windows[0]->scrollback_top_line - (y_refresh_top - 1) - y_size
@@ -1440,6 +1452,7 @@ static int refresh_window0_inner(int y_size, int y_refresh_top) {
       // In case we've hit the buffer back there's nothing more to do since
       // we're at the bottom of the area to redraw.
       current_history_hit_top = true;
+      result = false;
     }
     else {
       z_windows[0]->uppermargin = y_refresh_top - 1;
@@ -1453,6 +1466,7 @@ static int refresh_window0_inner(int y_size, int y_refresh_top) {
             -0x0100,
             "output_repeat_paragraphs");
       }
+      result = true;
       TRACE_LOG("rewound_paragraph_was_newline_terminated: %d.\n",
           history->rewound_paragraph_was_newline_terminated);
       // This is a special case: When we're just starting rebuilding the
@@ -1466,7 +1480,7 @@ static int refresh_window0_inner(int y_size, int y_refresh_top) {
             newline_string,
             (void*)(&z_windows[0]->window_number));
       }
-      result--;
+      my_paragraph_diff--;
       if (bool_equal(z_windows[0]->buffering, true))
         wordwrap_flush_output(z_windows[0]->wordwrapper);
       //screen_cell_interface->update_screen();
@@ -1517,7 +1531,8 @@ static int refresh_window0_inner(int y_size, int y_refresh_top) {
       TRACE_LOG("lines_left: %d.\n", lines_left);
 
       if ( (lines_left> 0) && (return_code != 1) ) {
-        result += refresh_window0_inner(lines_left, y_refresh_top);
+        result |= refresh_window0_inner(
+            lines_left, y_refresh_top, &my_paragraph_diff);
       }
     }
   }
@@ -1577,7 +1592,7 @@ static int refresh_window0_inner(int y_size, int y_refresh_top) {
             "output_repeat_paragraphs");
       }
       */
-      result++;
+      my_paragraph_diff++;
       current_history_hit_top = false;
       if (bool_equal(z_windows[0]->buffering, true))
         wordwrap_flush_output(z_windows[0]->wordwrapper);
@@ -1595,10 +1610,10 @@ static int refresh_window0_inner(int y_size, int y_refresh_top) {
     while ( (z_windows[0]->remaining_lines_to_fill > 0) && (return_code >= 0) );
     z_windows[0]->remaining_lines_to_fill = -1;
 
-    TRACE_LOG("Paragraphs to rewind: %d.\n", result);
-    while (result > 0) {
+    TRACE_LOG("Paragraphs to rewind: %d.\n", my_paragraph_diff);
+    while (my_paragraph_diff > 0) {
       output_rewind_paragraph(history, NULL);
-      result--;
+      my_paragraph_diff--;
     }
     current_history_screen_line = original_pos;
     TRACE_LOG("current_paragraph_index: %p\n",
@@ -1607,10 +1622,14 @@ static int refresh_window0_inner(int y_size, int y_refresh_top) {
     TRACE_LOG("scrollback_top_line: %d, chsl: %d\n",
         z_windows[0]->scrollback_top_line, current_history_screen_line);
 
-    result += refresh_window0_inner(
-        z_windows[0]->scrollback_top_line
+    refresh_window0_inner(z_windows[0]->scrollback_top_line
         - (y_refresh_top - 1) - current_history_screen_line,
-        y_refresh_top);
+        y_refresh_top, &my_paragraph_diff);
+
+    // Since in case #2 our history position is always between upper and
+    // lower refresh bounds, there has to be something we can display at
+    // least underneath the current position. Se, we can always return true.
+    result = true;
   }
   else {
     // 3. chsl above or exactly on upper refresh-area boundary.
@@ -1666,7 +1685,7 @@ static int refresh_window0_inner(int y_size, int y_refresh_top) {
       else if (z_windows[0]->remaining_lines_to_fill > 0)
         z_windows[0]->remaining_lines_to_fill--;
 
-      result++;
+      my_paragraph_diff++;
 
       TRACE_LOG("Lines to skip: %d.\n",
           z_windows[0]->lines_to_skip);
@@ -1693,34 +1712,45 @@ static int refresh_window0_inner(int y_size, int y_refresh_top) {
       TRACE_LOG("nof_relevant_lines: %d\n", nof_relevant_lines);
       */
     }
+
+    result = true;
+    // Since case #3 deals with a position at the top or above the top
+    // position to display, we know there must be some output to display
+    // in the refresh window and can accordingly always return true.
   }
   z_windows[0]->uppermargin = 0;
 
+  if (nof_paragraph_diff != NULL)
+    *nof_paragraph_diff += my_paragraph_diff;
+
+  TRACE_LOG("Returning %d from refresh_window0_inner.\n", result);
   return result;
 }
 
 
 static void init_output_history() {
   if (history != NULL) {
+    TRACE_LOG("Destroying history output.\n");
     destroy_history_output(history);
     history = NULL;
-  }
-
-  if (current_history_screen_line != 0) {
-    if ((history = init_history_output(
-            outputhistory[0], &history_target)) == NULL) {
-      i18n_translate_and_exit(
-          libcellif_module_name,
-          i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR,
-          -0x0100,
-          "init_history_output");
-      return;
-    }
-
-    TRACE_LOG("History initialized at: %p\n", history);
-    current_history_screen_line = 0;
     current_history_hit_top = false;
   }
+
+  //if (current_history_screen_line != 0) {
+  //
+  if ((history = init_history_output(
+          outputhistory[0], &history_target)) == NULL) {
+    i18n_translate_and_exit(
+        libcellif_module_name,
+        i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR,
+        -0x0100,
+        "init_history_output");
+    return;
+  }
+
+  TRACE_LOG("History initialized at: %p\n", history);
+  current_history_screen_line = 0;
+  //current_history_screen_line = -1;
 }
 
 
@@ -1735,8 +1765,9 @@ static void init_output_history() {
 //   scollback position, which means that no matter how far the user scrolled
 //   up, line 1 always marks the top line of the window.
 //
-static void refresh_window0(int y_size, int y_refresh_top, bool reset_history) {
+static bool refresh_window0(int y_size, int y_refresh_top, bool reset_history) {
   int last_active_z_window_id = -1;
+  bool result;
 
   if ( (reset_history == true) || (history == NULL) ) {
     init_output_history();
@@ -1761,7 +1792,8 @@ static void refresh_window0(int y_size, int y_refresh_top, bool reset_history) {
   }
   */
 
-  refresh_window0_inner(y_size, y_refresh_top);
+  result = refresh_window0_inner(y_size, y_refresh_top, NULL);
+  TRACE_LOG("Final refresh_window0_inner result: %d.\n", result);
   screen_cell_interface->set_text_style(0);
 
   disable_more_prompt = false;
@@ -1798,6 +1830,8 @@ static void refresh_window0(int y_size, int y_refresh_top, bool reset_history) {
   TRACE_LOG("end: current_history_screen_line: %d, scrollback_top_line: %d\n",
       current_history_screen_line,
       z_windows[0]->scrollback_top_line);
+
+  return result;
 }
 
 
@@ -1963,11 +1997,10 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
 {
   z_ucs input, buf;
   int timeout_millis = -1, event_type, i;
-  bool input_in_progress = true;
+  bool input_in_progress = true, redraw_result;
   z_ucs char_buf[] = { 0, 0 };
   //int original_screen_width = screen_width;
   //int original_screen_height = screen_height;
-
   int input_size = preloaded_input;
   int input_scroll_x = 0;
   int input_index = preloaded_input;
@@ -2069,6 +2102,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
   {
     event_type = screen_cell_interface->get_next_event(&input, timeout_millis);
     TRACE_LOG("Evaluating event %d.\n", event_type);
+    TRACE_LOG("current_history_hit_top: %d.\n", current_history_hit_top);
 
     if (event_type == EVENT_WAS_TIMEOUT)
     {
@@ -2125,30 +2159,70 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
         || (event_type == EVENT_WAS_CODE_PAGE_DOWN)
         ) {
       scroll_area_ysize = z_windows[0]->ysize / 2;
+      TRACE_LOG("scroll_area_ysize: %d.\n", scroll_area_ysize);
       // "scroll_area_ysize" denotes the area which we're refreshing, not(!)
       // the area we're copying on-screen. Example: In case the screen has
       // height 29, we're copying 15 lines of existing screen contents and
       // refresh the remaining 14 lines.
 
+      // FIXME: Cursor not at bottom, have to redraw everything.
       if ( (event_type == EVENT_WAS_CODE_PAGE_UP)
           && (current_history_hit_top == false) ) {
         z_windows[0]->scrollback_top_line += scroll_area_ysize;
-        screen_cell_interface->copy_area(
-            z_windows[0]->ypos + scroll_area_ysize,
-            z_windows[0]->xpos,
-            z_windows[0]->ypos,
-            z_windows[0]->xpos,
-            z_windows[0]->ysize - scroll_area_ysize,
-            z_windows[0]->xsize);
-        screen_cell_interface->clear_area(
-            z_windows[0]->xpos,
-            z_windows[0]->ypos,
-            screen_width,
-            scroll_area_ysize);
-        refresh_window0(
-            scroll_area_ysize,
-            1,
-            false);
+        TRACE_LOG("scrollback_top_line: %d.\n",
+            z_windows[0]->scrollback_top_line);
+
+        if (z_windows[0]->ycursorpos != z_windows[0]->ysize) {
+          TRACE_LOG("Cursor not at bottom, have to redraw everything.\n");
+          screen_cell_interface->clear_area(
+              z_windows[0]->xpos,
+              z_windows[0]->ypos,
+              screen_width,
+              z_windows[0]->ysize);
+          redraw_result = refresh_window0(
+              z_windows[0]->ysize,
+              1,
+              true);
+        }
+        else {
+          TRACE_LOG("Cursor at bottom, copying and refreshing half screen.\n");
+          screen_cell_interface->copy_area(
+              z_windows[0]->ypos + scroll_area_ysize,
+              z_windows[0]->xpos,
+              z_windows[0]->ypos,
+              z_windows[0]->xpos,
+              z_windows[0]->ysize - scroll_area_ysize,
+              z_windows[0]->xsize);
+          screen_cell_interface->clear_area(
+              z_windows[0]->xpos,
+              z_windows[0]->ypos,
+              screen_width,
+              scroll_area_ysize);
+          redraw_result = refresh_window0(
+              scroll_area_ysize,
+              1,
+              false);
+        }
+
+        if (redraw_result == false) {
+          TRACE_LOG("Area to display outside history bounds.\n");
+          z_windows[0]->scrollback_top_line -= scroll_area_ysize;
+          // Clear window before redraw: Although we've already cleared
+          // window 0 above and the return code of refresh_window0 shows
+          // there was no output in the meantime, the "copy_area" above
+          // may have written to areas which will be left empty by the
+          // "refresh_window0" further below.
+          screen_cell_interface->clear_area(
+              z_windows[0]->xpos,
+              z_windows[0]->ypos,
+              screen_width,
+              z_windows[0]->ysize);
+          refresh_window0(
+              z_windows[0]->ysize,
+              1,
+              true);
+        }
+
         TRACE_LOG("Finished page-up repainting.\n");
       }
       else if ( (event_type == EVENT_WAS_CODE_PAGE_DOWN)
@@ -2177,6 +2251,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
       screen_cell_interface->set_cursor_visibility(
           z_windows[0]->scrollback_top_line > z_windows[0]->ysize
           ? false : true);
+
       screen_cell_interface->update_screen();
     }
     else
@@ -2192,23 +2267,12 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
       // Invalidate history from scrolling, since it will no longer be
       // valid in case of new output.
       if (history != NULL) {
+        TRACE_LOG("Destroying history output.\n");
         destroy_history_output(history);
         history = NULL;
         current_history_screen_line = -1;
+        current_history_hit_top = false;
       }
-
-      /*
-      if (top_upscroll_line != -1)
-      {
-        // End up-scroll.
-        TRACE_LOG("Ending scrollback.\n");
-        top_upscroll_line = -1;
-        upscroll_hit_top = false;
-        destroy_history_output(history);
-        screen_cell_interface->set_cursor_visibility(true);
-        refresh_window0();
-      }
-      */
 
       if (event_type == EVENT_WAS_INPUT)
       {
@@ -2732,6 +2796,8 @@ static int read_char(uint16_t tenth_seconds, uint32_t verification_routine,
   int current_tenth_seconds = 0;
   int timed_routine_retval;
   int i;
+  int scroll_area_ysize;
+  bool redraw_result;
 
   flush_all_buffered_windows();
   for (i=0; i<nof_active_z_windows; i++)
@@ -2768,26 +2834,122 @@ static int read_char(uint16_t tenth_seconds, uint32_t verification_routine,
 
     if (
         (event_type == EVENT_WAS_CODE_PAGE_UP)
-        ||
-        (event_type == EVENT_WAS_CODE_PAGE_DOWN)
-       )
-    {
-      //handle_scrolling(event_type);
+        || (event_type == EVENT_WAS_CODE_PAGE_DOWN)
+       ) {
+      scroll_area_ysize = z_windows[0]->ysize / 2;
+      TRACE_LOG("scroll_area_ysize: %d.\n", scroll_area_ysize);
+      // "scroll_area_ysize" denotes the area which we're refreshing, not(!)
+      // the area we're copying on-screen. Example: In case the screen has
+      // height 29, we're copying 15 lines of existing screen contents and
+      // refresh the remaining 14 lines.
+
+      if ( (event_type == EVENT_WAS_CODE_PAGE_UP)
+          && (current_history_hit_top == false) ) {
+        z_windows[0]->scrollback_top_line += scroll_area_ysize;
+        TRACE_LOG("scrollback_top_line: %d.\n",
+            z_windows[0]->scrollback_top_line);
+
+        if (z_windows[0]->ycursorpos != z_windows[0]->ysize) {
+          TRACE_LOG("Cursor not at bottom, have to redraw everything.\n");
+          screen_cell_interface->clear_area(
+              z_windows[0]->xpos,
+              z_windows[0]->ypos,
+              screen_width,
+              z_windows[0]->ysize);
+          redraw_result = refresh_window0(
+              z_windows[0]->ysize,
+              1,
+              true);
+        }
+        else {
+          TRACE_LOG("Cursor at bottom, copying and refreshing half screen.\n");
+          screen_cell_interface->copy_area(
+              z_windows[0]->ypos + scroll_area_ysize,
+              z_windows[0]->xpos,
+              z_windows[0]->ypos,
+              z_windows[0]->xpos,
+              z_windows[0]->ysize - scroll_area_ysize,
+              z_windows[0]->xsize);
+          screen_cell_interface->clear_area(
+              z_windows[0]->xpos,
+              z_windows[0]->ypos,
+              screen_width,
+              scroll_area_ysize);
+          redraw_result = refresh_window0(
+              scroll_area_ysize,
+              1,
+              false);
+        }
+
+        if (redraw_result == false) {
+          TRACE_LOG("Area to display outside history bounds.\n");
+          z_windows[0]->scrollback_top_line -= scroll_area_ysize;
+          // Clear window before redraw: Although we've already cleared
+          // window 0 above and the return code of refresh_window0 shows
+          // there was no output in the meantime, the "copy_area" above
+          // may have written to areas which will be left empty by the
+          // "refresh_window0" further below.
+          screen_cell_interface->clear_area(
+              z_windows[0]->xpos,
+              z_windows[0]->ypos,
+              screen_width,
+              z_windows[0]->ysize);
+          refresh_window0(
+              z_windows[0]->ysize,
+              1,
+              true);
+        }
+
+        TRACE_LOG("Finished page-up repainting.\n");
+      }
+      else if ( (event_type == EVENT_WAS_CODE_PAGE_DOWN)
+          && (z_windows[0]->scrollback_top_line > z_windows[0]->ysize) ) {
+        z_windows[0]->scrollback_top_line -= scroll_area_ysize;
+        screen_cell_interface->copy_area(
+            z_windows[0]->ypos,
+            z_windows[0]->xpos,
+            z_windows[0]->ypos + scroll_area_ysize,
+            z_windows[0]->xpos,
+            z_windows[0]->ysize - scroll_area_ysize,
+            z_windows[0]->xsize);
+        screen_cell_interface->clear_area(
+            z_windows[0]->xpos,
+            z_windows[0]->ypos
+            + (z_windows[0]->ysize - scroll_area_ysize),
+            screen_width,
+            scroll_area_ysize);
+        refresh_window0(
+            scroll_area_ysize,
+            1 + (z_windows[0]->ysize - scroll_area_ysize),
+            false);
+        TRACE_LOG("Finished page-down repainting.\n");
+      }
+
+      screen_cell_interface->set_cursor_visibility(
+          z_windows[0]->scrollback_top_line > z_windows[0]->ysize
+          ? false : true);
+
+      screen_cell_interface->update_screen();
     }
     else
     {
-      /*
-      if (top_upscroll_line != -1)
-      {
-        // End up-scroll.
-        TRACE_LOG("Ending scrollback.\n");
-        top_upscroll_line = -1;
-        upscroll_hit_top = false;
-        destroy_history_output(history);
+      if (z_windows[0]->scrollback_top_line > z_windows[0]->ysize) {
+        erase_window(0);
+        z_windows[0]->scrollback_top_line = z_windows[0]->ysize;
+        refresh_window0(z_windows[0]->ysize, 1, false);
         screen_cell_interface->set_cursor_visibility(true);
-        refresh_window0();
+        screen_cell_interface->update_screen();
       }
-      */
+
+      // Invalidate history from scrolling, since it will no longer be
+      // valid in case of new output.
+      if (history != NULL) {
+        TRACE_LOG("Destroying history output.\n");
+        destroy_history_output(history);
+        history = NULL;
+        current_history_screen_line = -1;
+        current_history_hit_top = false;
+      }
 
       if (event_type == EVENT_WAS_INPUT)
       {
@@ -3130,8 +3292,10 @@ static void game_was_restored_and_history_modified()
     //input_line_on_screen = true;
     refresh_window0(z_windows[0]->ysize, 1, true);
     if (history != NULL) {
+      TRACE_LOG("Destroying history output.\n");
       destroy_history_output(history);
       history = NULL;
+      current_history_hit_top = false;
     }
     z_windows[0]->ycursorpos = z_windows[0]->ysize;
     z_windows[0]->xcursorpos = z_windows[0]->leftmargin + 1;
@@ -3333,22 +3497,6 @@ void new_cell_screen_size(int newysize, int newxsize)
   }
 
   refresh_screen();
-  /*
-  erase_window(0);
-  if (history != NULL) {
-    destroy_history_output(history);
-    history = NULL;
-  }
-  z_windows[0]->scrollback_top_line = z_windows[0]->ysize;
-  refresh_window0(-1, 1, true);
-
-  for (i=0; i<nof_active_z_windows; i++)
-    z_windows[i]->nof_consecutive_lines_output = consecutive_lines_buffer[i];
-  disable_more_prompt = false;
-
-  //screen_cell_interface->redraw_screen_from_scratch();
-  screen_cell_interface->update_screen();
-  */
 }
 
 
