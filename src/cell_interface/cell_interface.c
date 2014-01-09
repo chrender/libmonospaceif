@@ -1973,11 +1973,11 @@ static void refresh_screen() {
     */
 
     free(blockbuf_line);
-
-    update_output_colours(0);
-    update_output_text_style(0);
-    refresh_cursor(0);
   }
+
+  update_output_colours(0);
+  update_output_text_style(0);
+  refresh_cursor(0);
 
   screen_cell_interface->redraw_screen_from_scratch();
 }
