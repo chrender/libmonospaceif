@@ -173,6 +173,7 @@ static history_output *history = NULL;
 
 static int current_history_screen_line = -1;
 static bool current_history_hit_top = false;
+static int rightmost_y_refresh_curpos = -1;
 
 // This flag is set to true when an read_line is currently underway. It's
 // used by screen refresh functions like "new_cell_screen_size".
@@ -1488,25 +1489,29 @@ static bool refresh_window0_inner(int y_size, int y_refresh_top,
 
       z_windows[0]->uppermargin = 0;
 
-      if ( (current_history_screen_line == 0)
-          && (input_line_on_screen == true) ) {
-        TRACE_LOG("At end of history, storing input-pos at: %d, width: %d.\n",
-            z_windows[0]->xpos + z_windows[0]->xcursorpos
-            + z_windows[0]->rightmargin,
-            z_windows[0]->xsize - 1);
-
-        *current_input_y
-          = z_windows[0]->ypos + z_windows[0]->ycursorpos - 1;
-        *current_input_x
+      if (current_history_screen_line == 0) {
+        rightmost_y_refresh_curpos
           = z_windows[0]->xpos + z_windows[0]->xcursorpos - 1;
-        *current_input_display_width
-          = z_windows[0]->xpos + z_windows[0]->xsize - *current_input_x
-          - z_windows[0]->rightmargin;
 
-        TRACE_LOG("refresh-x: %d, refresh-y: %d.\n",
-            *current_input_x, *current_input_y);
-        TRACE_LOG("new input width: %d.\n",
-            *current_input_display_width);
+        if (input_line_on_screen == true) {
+          TRACE_LOG("At end of history, storing input-pos at: %d, width: %d.\n",
+              z_windows[0]->xpos + z_windows[0]->xcursorpos
+              + z_windows[0]->rightmargin,
+              z_windows[0]->xsize - 1);
+
+          *current_input_y
+            = z_windows[0]->ypos + z_windows[0]->ycursorpos - 1;
+          *current_input_x
+            = z_windows[0]->xpos + z_windows[0]->xcursorpos - 1;
+          *current_input_display_width
+            = z_windows[0]->xpos + z_windows[0]->xsize - *current_input_x
+            - z_windows[0]->rightmargin;
+
+          TRACE_LOG("refresh-x: %d, refresh-y: %d.\n",
+              *current_input_x, *current_input_y);
+          TRACE_LOG("new input width: %d.\n",
+              *current_input_display_width);
+        }
       }
 
       nof_paragraph_lines = z_windows[0]->nof_consecutive_lines_output + 1;
@@ -1781,6 +1786,7 @@ static bool refresh_window0(int y_size, int y_refresh_top, bool reset_history) {
     switch_to_window(0);
   }
   disable_more_prompt = true;
+  rightmost_y_refresh_curpos = -1;
 
   TRACE_LOG("refresh_window0(ysize:%d, y_refresh_top:%d, reset_history:%d)\n",
       y_size, y_refresh_top, reset_history);
@@ -1804,32 +1810,36 @@ static bool refresh_window0(int y_size, int y_refresh_top, bool reset_history) {
   if (last_active_z_window_id != -1)
     switch_to_window(last_active_z_window_id);
 
-  if ( (z_windows[0]->scrollback_top_line <= z_windows[0]->ysize)
-      && (input_line_on_screen == true) ) {
-    // current_input_x and current_input_y have already been adjusted
-    // in "refresh_window0_inner".
+  if (z_windows[0]->scrollback_top_line <= z_windows[0]->ysize) {
+    if (input_line_on_screen == true) {
+      // current_input_x and current_input_y have already been adjusted
+      // in "refresh_window0_inner".
 
-    //z_windows[0]->ycursorpos = *current_input_y - 1;
+      //z_windows[0]->ycursorpos = *current_input_y - 1;
 
-    refresh_input_line();
+      refresh_input_line();
 
-    /* xcursorpos ist set by "refresh_input_line".
-    z_windows[0]->xcursorpos
-      = *current_input_size > *current_input_display_width
-      ? *current_input_x + *current_input_display_width
-      : *current_input_x + *current_input_size;
-      */
+      /* xcursorpos ist set by "refresh_input_line".
+         z_windows[0]->xcursorpos
+         = *current_input_size > *current_input_display_width
+         ? *current_input_x + *current_input_display_width
+         : *current_input_x + *current_input_size;
+         */
+    }
+    else {
+      z_windows[0]->ycursorpos = z_windows[0]->ysize;
+      z_windows[0]->xcursorpos = rightmost_y_refresh_curpos;
+
+      //z_windows[0]->ycursorpos = z_windows[0]->ysize;
+      //z_windows[0]->xcursorpos = 1 + z_windows[0]->leftmargin;
+    }
   }
-  /*
-  else {
-    z_windows[0]->ycursorpos = z_windows[0]->ysize;
-    z_windows[0]->xcursorpos = 1 + z_windows[0]->leftmargin;
-  }
-  */
 
   TRACE_LOG("end: current_history_screen_line: %d, scrollback_top_line: %d\n",
       current_history_screen_line,
       z_windows[0]->scrollback_top_line);
+
+  TRACE_LOG("rightmost_y_refresh_curpos: %d.\n", rightmost_y_refresh_curpos);
 
   return result;
 }
