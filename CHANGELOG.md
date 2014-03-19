@@ -1,7 +1,7 @@
 
 
 
-   **Version 0.7.8 — March 3, 2014**
+   **Version 0.7.8 — March 19, 2014**
 
  - Adapted to automake version 1.14.
  - Entire re-implementation of screen refresh and scrolling. Many thanks to Lewis Gentry for bug-reporting and extensive beta-testing.

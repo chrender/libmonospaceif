@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <changelog>
   <change version="0.7.8">
-    <datetime day-of-week="Mon" month="3" day="3" hour="21"
-      minute="50" second="0" timezone="CET" year="2014"/>
+    <datetime day-of-week="Wed" month="3" day="19" hour="20"
+      minute="25" second="58" timezone="CET" year="2014"/>
     <logentry>Adapted to automake version 1.14.</logentry>
     <logentry>Entire re-implementation of screen refresh and scrolling. Many thanks to Lewis Gentry for bug-reporting and extensive beta-testing.</logentry>
     <logentry>Fixed a crash that would occur in case the history buffer didn't hold enough input for some screen refresh cases.</logentry>
