@@ -1,6 +1,13 @@
 
 
 
+   **Version 0.7.9**
+
+ - Fixed erase_window and clearing of lines to conform to spec regarding reverse output.
+
+---
+
+
    **Version 0.7.8 — March 19, 2014**
 
  - Adapted to automake version 1.14.

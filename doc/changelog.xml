@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <changelog>
+  <change version="0.7.9">
+    <logentry>Fixed erase_window and clearing of lines to conform to spec regarding reverse output.</logentry>
+  </change>
+
   <change version="0.7.8">
     <datetime day-of-week="Wed" month="3" day="19" hour="20"
       minute="25" second="58" timezone="CET" year="2014"/>

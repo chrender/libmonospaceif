@@ -155,6 +155,7 @@ static bool disable_more_prompt = false;
 static z_ucs *libcellif_more_prompt;
 static z_ucs *libcellif_score_string;
 static z_ucs *libcellif_turns_string;
+static z_ucs space_string[] = { Z_UCS_SPACE, 0 };
 static int libcellif_right_status_min_size;
 static int active_z_window_id = -1;
 static z_colour current_output_foreground_colour = -3;
@@ -280,6 +281,21 @@ static void flush_all_buffered_windows() {
   for (i=0; i<nof_active_z_windows; i++)
     if (bool_equal(z_windows[i]->buffering, true))
       wordwrap_flush_output(z_windows[i]->wordwrapper);
+}
+
+
+void clear_to_end_of_cell_line() {
+  z_style style_buf;
+
+  // Disable potential reverse output.
+  style_buf = z_windows[active_z_window_id]->output_text_style;
+  z_windows[active_z_window_id]->output_text_style &= ~Z_STYLE_REVERSE_VIDEO;
+  update_output_text_style(active_z_window_id);
+
+  screen_cell_interface->clear_to_eol();
+
+  // Re-enable potential reverse output.
+  z_windows[active_z_window_id]->output_text_style = style_buf;
 }
 
 
@@ -435,7 +451,7 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
               z_windows[window_number]->xsize);
           refresh_cursor(window_number);
           // Clear line, including left margin, to EOL.
-          screen_cell_interface->clear_to_eol();
+          clear_to_end_of_cell_line();
         }
         else {
           // If we're not at the bottom of the window, simply move
@@ -507,7 +523,7 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
           z_windows[window_number]->xcursorpos
             = z_windows[window_number]->leftmargin + 1;
           refresh_cursor(window_number);
-          screen_cell_interface->clear_to_eol();
+          clear_to_end_of_cell_line();
 
           if (event_type == EVENT_WAS_WINCH) {
             winch_found = true;
@@ -1121,6 +1137,8 @@ static void split_window(int16_t nof_lines)
 
 static void erase_window(int16_t window_number)
 {
+  z_style style_buf;
+
   if (
       (window_number >= 0)
       &&
@@ -1138,6 +1156,10 @@ static void erase_window(int16_t window_number)
       wordwrap_flush_output(z_windows[window_number]->wordwrapper);
 
     update_output_colours(window_number);
+
+    // Disable potential reverse output.
+    style_buf = z_windows[window_number]->output_text_style;
+    z_windows[window_number]->output_text_style &= ~Z_STYLE_REVERSE_VIDEO;
     update_output_text_style(window_number);
 
     screen_cell_interface->clear_area(
@@ -1145,6 +1167,9 @@ static void erase_window(int16_t window_number)
         z_windows[window_number]->ypos,
         z_windows[window_number]->xsize,
         z_windows[window_number]->ysize);
+
+    // Re-enable potential reverse output.
+    z_windows[window_number]->output_text_style = style_buf;
 
     z_windows[window_number]->xcursorpos
       = 1 + z_windows[window_number]->leftmargin;
@@ -2686,7 +2711,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
           screen_cell_interface->z_ucs_output(input_buffer + input_scroll_x);
           if (buf != 0)
             input_buffer[input_scroll_x + input_display_width] = buf;
-          screen_cell_interface->clear_to_eol();
+          clear_to_end_of_cell_line();
         }
         else
         {
@@ -2695,7 +2720,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
           input_index = 0;
           z_windows[active_z_window_id]->xcursorpos = input_x;
           screen_cell_interface->goto_yx(input_y, input_x);
-          screen_cell_interface->clear_to_eol();
+          clear_to_end_of_cell_line();
         }
 
         refresh_cursor(active_z_window_id);
@@ -2744,7 +2769,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
           input_scroll_x = input_size - input_display_width + 1;
           screen_cell_interface->goto_yx(input_y, input_x);
           screen_cell_interface->z_ucs_output(input_buffer + input_scroll_x);
-          screen_cell_interface->clear_to_eol();
+          clear_to_end_of_cell_line();
           z_windows[active_z_window_id]->xcursorpos
             = input_x + input_display_width - 1;
         }
@@ -2775,7 +2800,7 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
   TRACE_LOG("x-readline-ycursorpos: %d.\n", z_windows[0]->ycursorpos);
 
   screen_cell_interface->goto_yx(input_y, input_x);
-  screen_cell_interface->clear_to_eol();
+  clear_to_end_of_cell_line();
   z_windows[active_z_window_id]->xcursorpos
     = input_x - (z_windows[active_z_window_id]->xpos - 1);
   refresh_cursor(active_z_window_id);
@@ -3066,27 +3091,17 @@ static int read_char(uint16_t tenth_seconds, uint32_t verification_routine,
 }
 
 
-static int number_length(int number)
-{
-  if (number == 0)
-    return 1;
-  else
-    return ((int)log10(abs(number))) + (number < 0 ? 1 : 0) + 1;
-}
-
-
 static void show_status(z_ucs *room_description, int status_line_mode,
     int16_t parameter1, int16_t parameter2)
 {
   int desc_len = z_ucs_len(room_description);
-  int score_length, turn_length, rightside_length, room_desc_space;
+  int rightside_length, room_desc_space;
   z_ucs rightside_buf_zucs[libcellif_right_status_min_size + 12];
   z_ucs buf = 0;
   z_ucs *ptr;
-  char latin1_buf[8];
+  static char latin1_buf1[8];
+  static char latin1_buf2[8];
   int last_active_z_window_id;
-  //int i;
-  //z_ucs *ptr2;
 
   TRACE_LOG("statusline: \"");
   TRACE_LOG_Z_UCS(room_description);
@@ -3095,76 +3110,78 @@ static void show_status(z_ucs *room_description, int status_line_mode,
   TRACE_LOG("statusline-xsize: %d, screen:%d.\n",
       z_windows[statusline_window_id]->xsize, screen_width);
 
-  if (statusline_window_id > 0)
-  {
-    z_windows[statusline_window_id]->ycursorpos = 1;
-    z_windows[statusline_window_id]->xcursorpos = 1;
-
+  if (statusline_window_id > 0) {
     last_active_z_window_id = active_z_window_id;
     switch_to_window(statusline_window_id);
     erase_window(statusline_window_id);
 
-    if (status_line_mode == SCORE_MODE_SCORE_AND_TURN)
-    {
-      score_length = number_length(parameter1);
-      turn_length = number_length(parameter2);
+    z_windows[statusline_window_id]->ycursorpos = 1;
+    z_windows[statusline_window_id]->xcursorpos = 1;
+    refresh_cursor(statusline_window_id);
+    z_ucs_output(space_string);
+
+    if (status_line_mode == SCORE_MODE_SCORE_AND_TURN) {
+      sprintf(latin1_buf1, ": %d  ", parameter1);
+      sprintf(latin1_buf2, ": %d", parameter2);
 
       rightside_length
-        = libcellif_right_status_min_size - 2 + score_length + turn_length;
+        = libcellif_right_status_min_size
+        - 2
+        + strlen(latin1_buf1)
+        + strlen(latin1_buf2);
 
       room_desc_space
         = z_windows[statusline_window_id]->xsize - rightside_length - 3;
 
-      if (room_desc_space < desc_len)
-      {
+      if (room_desc_space < desc_len) {
         buf = room_description[room_desc_space];
         room_description[room_desc_space] = 0;
       }
 
-      z_windows[statusline_window_id]->xcursorpos = 2;
-      refresh_cursor(statusline_window_id);
       z_ucs_output(room_description);
+
+      while (z_windows[statusline_window_id]->xcursorpos
+          < z_windows[statusline_window_id]->xsize - rightside_length + 1) {
+        z_ucs_output(space_string);
+      }
 
       z_windows[statusline_window_id]->xcursorpos
         = z_windows[statusline_window_id]->xsize - rightside_length + 1;
       refresh_cursor(statusline_window_id);
 
       ptr = z_ucs_cpy(rightside_buf_zucs, libcellif_score_string);
-      sprintf(latin1_buf, ": %d  ", parameter1);
-      ptr = z_ucs_cat_latin1(ptr, latin1_buf);
+      ptr = z_ucs_cat_latin1(ptr, latin1_buf1);
       ptr = z_ucs_cat(ptr, libcellif_turns_string);
-      sprintf(latin1_buf, ": %d", parameter2);
-      ptr = z_ucs_cat_latin1(ptr, latin1_buf);
-
-      z_ucs_output(rightside_buf_zucs);
-
-      if (buf != 0)
-        room_description[room_desc_space] = buf;
+      ptr = z_ucs_cat_latin1(ptr, latin1_buf2);
     }
-    else if (status_line_mode == SCORE_MODE_TIME)
-    {
+    else if (status_line_mode == SCORE_MODE_TIME) {
       room_desc_space = z_windows[statusline_window_id]->xsize - 8;
 
-      if (room_desc_space < desc_len)
-      {
+      if (room_desc_space < desc_len) {
         buf = room_description[room_desc_space];
         room_description[room_desc_space] = 0;
       }
 
-      z_windows[statusline_window_id]->xcursorpos = 2;
-      refresh_cursor(statusline_window_id);
       z_ucs_output(room_description);
+
+      while (z_windows[statusline_window_id]->xcursorpos
+          < z_windows[statusline_window_id]->xsize - 5) {
+        z_ucs_output(space_string);
+      }
 
       z_windows[statusline_window_id]->xcursorpos
         = z_windows[statusline_window_id]->xsize - 5;
       refresh_cursor(statusline_window_id);
 
-      sprintf(latin1_buf, "%02d:%02d", parameter1, parameter2);
-      latin1_string_to_zucs_string(rightside_buf_zucs, latin1_buf, 8);
-      z_ucs_output(rightside_buf_zucs);
+      sprintf(latin1_buf1, "%02d:%02d", parameter1, parameter2);
+      latin1_string_to_zucs_string(rightside_buf_zucs, latin1_buf1, 8);
+    }
 
-      if (buf != 0)
-        room_description[room_desc_space] = buf;
+    z_ucs_output(rightside_buf_zucs);
+    z_ucs_output(space_string);
+
+    if (buf != 0) {
+      room_description[room_desc_space] = buf;
     }
 
     switch_to_window(last_active_z_window_id);
