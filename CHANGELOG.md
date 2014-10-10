@@ -1,7 +1,7 @@
 
 
 
-   **Version 0.7.9**
+   **Version 0.7.9 — May 25, 2014**
 
  - Fixed erase_window and clearing of lines to conform to spec regarding reverse output.
 

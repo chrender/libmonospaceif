@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <changelog>
   <change version="0.7.9">
+    <datetime day-of-week="Sun" month="5" day="25" hour="10"
+      minute="10" second="10" timezone="CEST" year="2014"/>
     <logentry>Fixed erase_window and clearing of lines to conform to spec regarding reverse output.</logentry>
   </change>
 
