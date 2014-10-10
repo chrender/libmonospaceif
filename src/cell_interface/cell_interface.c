@@ -3124,11 +3124,12 @@ static void show_status(z_ucs *room_description, int status_line_mode,
       sprintf(latin1_buf1, ": %d  ", parameter1);
       sprintf(latin1_buf2, ": %d", parameter2);
 
-      rightside_length
-        = libcellif_right_status_min_size
-        - 2
-        + strlen(latin1_buf1)
-        + strlen(latin1_buf2);
+      ptr = z_ucs_cpy(rightside_buf_zucs, libcellif_score_string);
+      ptr = z_ucs_cat_latin1(ptr, latin1_buf1);
+      ptr = z_ucs_cat(ptr, libcellif_turns_string);
+      ptr = z_ucs_cat_latin1(ptr, latin1_buf2);
+      rightside_length = z_ucs_len(rightside_buf_zucs) + 1;
+      TRACE_LOG("rightside_length: %d.\n", rightside_length);
 
       room_desc_space
         = z_windows[statusline_window_id]->xsize - rightside_length - 3;
@@ -3149,10 +3150,6 @@ static void show_status(z_ucs *room_description, int status_line_mode,
         = z_windows[statusline_window_id]->xsize - rightside_length + 1;
       refresh_cursor(statusline_window_id);
 
-      ptr = z_ucs_cpy(rightside_buf_zucs, libcellif_score_string);
-      ptr = z_ucs_cat_latin1(ptr, latin1_buf1);
-      ptr = z_ucs_cat(ptr, libcellif_turns_string);
-      ptr = z_ucs_cat_latin1(ptr, latin1_buf2);
     }
     else if (status_line_mode == SCORE_MODE_TIME) {
       room_desc_space = z_windows[statusline_window_id]->xsize - 8;

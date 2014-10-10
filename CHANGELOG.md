@@ -1,6 +1,13 @@
 
 
 
+   **Version 0.7.10**
+
+ - Fixed score/turns position in statusline for v≤3 games.
+
+---
+
+
    **Version 0.7.9 — May 25, 2014**
 
  - Fixed erase_window and clearing of lines to conform to spec regarding reverse output.
