@@ -16,7 +16,7 @@
 #    documentation and/or other materials provided with the distribution.
 # 3. The name of the author may not be used to endorse or promote products
 #    derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
 # IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 # OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -35,7 +35,11 @@ AC_ARG_ENABLE([tracing],
  [],
  [enable_tracing=no])
 
-AC_INIT([libcellif], [0.7.8])
+AC_INIT(
+ [libcellif],
+ [0.7.8],
+ fizmo@spellbreaker.org,
+ libcellif)
 
 
 AC_CONFIG_AUX_DIR([.])
