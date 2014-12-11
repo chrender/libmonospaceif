@@ -4,6 +4,7 @@
    **Version 0.7.10**
 
  - Fixed score/turns position in statusline for v≤3 games.
+ - Minor changes for autoconf settings.
 
 ---
 
