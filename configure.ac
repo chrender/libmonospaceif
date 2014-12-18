@@ -48,6 +48,8 @@ AC_PROG_CC
 AC_PROG_RANLIB
 AM_PROG_AR
 
+AC_SUBST([DEV_BUILD_PREFIX], "$DESTDIR$prefix")
+
 AM_CONDITIONAL([FIZMO_BUILD_PREFIX_EMPTY], [test "$fizmo_build_prefix" = ""])
 
 PKG_CHECK_MODULES([libfizmo], [libfizmo >= 0.7.8])
