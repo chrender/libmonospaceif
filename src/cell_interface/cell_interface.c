@@ -1410,7 +1410,7 @@ static bool refresh_window0_inner(int y_size, int y_refresh_top,
 
     TRACE_LOG("Scrolling case #0.\n");
 
-    return_code = output_rewind_paragraph(history, NULL);
+    return_code = output_rewind_paragraph(history, NULL, NULL, NULL);
 
     if (return_code < 0) {
       i18n_translate_and_exit(
@@ -1467,7 +1467,7 @@ static bool refresh_window0_inner(int y_size, int y_refresh_top,
     TRACE_LOG("Refreshing above history line %d with lowermargin %d.\n",
         current_history_screen_line, z_windows[0]->lowermargin);
 
-    if ((return_code = output_rewind_paragraph(history, NULL)) < 0) {
+    if ((return_code = output_rewind_paragraph(history,NULL,NULL,NULL)) < 0) {
       i18n_translate_and_exit(
           libcellif_module_name,
           i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR,
@@ -1642,7 +1642,7 @@ static bool refresh_window0_inner(int y_size, int y_refresh_top,
 
     TRACE_LOG("Paragraphs to rewind: %d.\n", my_paragraph_diff);
     while (my_paragraph_diff > 0) {
-      output_rewind_paragraph(history, NULL);
+      output_rewind_paragraph(history, NULL, NULL, NULL);
       my_paragraph_diff--;
     }
     current_history_screen_line = original_pos;
