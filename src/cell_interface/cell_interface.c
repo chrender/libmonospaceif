@@ -1769,7 +1769,9 @@ static void init_output_history() {
   //if (current_history_screen_line != 0) {
   //
   if ((history = init_history_output(
-          outputhistory[0], &history_target)) == NULL) {
+          outputhistory[0],
+          &history_target,
+          Z_HISTORY_OUTPUT_WITHOUT_EXTRAS)) == NULL) {
     i18n_translate_and_exit(
         libcellif_module_name,
         i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR,
