@@ -1,7 +1,7 @@
 
 
 
-   **Version 0.7.10 — October 2, 2015**
+   **Version 0.7.10 — October 9, 2015**
 
  - Fixed score/turns position in statusline for v≤3 games.
  - Minor changes for autoconf settings.
