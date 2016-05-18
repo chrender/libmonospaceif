@@ -193,8 +193,15 @@ static int *current_input_display_width, *current_input_x, *current_input_y;
 static char last_left_margin_config_value_as_string[MAX_MARGIN_AS_STRING_LEN];
 static char last_right_margin_config_value_as_string[MAX_MARGIN_AS_STRING_LEN];
 
-static char *config_option_names[] = {
-  "left-margin", "right-margin", "disable-hyphenation", "disable-color", NULL };
+
+static char *my_config_option_names[] = {
+  "left-margin",
+  "right-margin",
+  "disable-hyphenation",
+  "disable-color",
+  NULL };
+
+static char **config_option_names = my_config_option_names;
 
 
 static void refresh_cursor(int window_id) {
@@ -3396,9 +3403,25 @@ static struct z_screen_interface z_cell_interface =
 };
 
 
+static int count_config_elements(char **config_option_names) {
+  int result = 0;
+
+  while (*config_option_names != NULL) {
+    result++;
+    config_option_names++;
+  }
+
+  return result;
+}
+
+
 void fizmo_register_screen_cell_interface(struct z_screen_cell_interface
     *new_screen_cell_interface)
 {
+  char **interface_config_options;
+  int my_config_count, if_config_count;
+  int i, config_index;
+
   if (screen_cell_interface == NULL)
   {
     TRACE_LOG("Registering screen cell interface at %p.\n",
@@ -3406,6 +3429,22 @@ void fizmo_register_screen_cell_interface(struct z_screen_cell_interface
 
     screen_cell_interface = new_screen_cell_interface;
     set_configuration_value("enable-font3-conversion", "true");
+
+    interface_config_options = screen_cell_interface->get_config_option_names();
+    my_config_count = count_config_elements(my_config_option_names);
+    if_config_count = count_config_elements(interface_config_options);
+
+    config_option_names = fizmo_malloc(
+        sizeof(char*) * (my_config_count + if_config_count + 1) );
+
+    config_index = 0;
+    for (i=0; i<my_config_count; i++) {
+      config_option_names[config_index++] = my_config_option_names[i];
+    }
+    for (i=0; i<if_config_count; i++) {
+      config_option_names[config_index++] = interface_config_options[i];
+    }
+    config_option_names[config_index] = NULL;
 
     fizmo_register_screen_interface(&z_cell_interface);
   }

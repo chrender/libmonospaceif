@@ -37,7 +37,7 @@ AC_ARG_ENABLE([tracing],
 
 AC_INIT(
  [libcellif],
- [0.7.8],
+ [0.7.11],
  fizmo@spellbreaker.org,
  libcellif)
 

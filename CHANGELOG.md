@@ -1,6 +1,13 @@
 
 
 
+   **Version 0.7.11**
+
+ - Add list of config options from registered output interface to list of options returned from “get_config_option_names”.
+
+---
+
+
    **Version 0.7.10 — October 9, 2015**
 
  - Fixed score/turns position in statusline for v≤3 games.
