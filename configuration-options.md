@@ -24,9 +24,9 @@ Option values may contain variables. Variables start with a dollar sign $ and ar
 
 
 
- - `left-margin = <margin-size>`  
+ - `left-margin = \<margin-size\>`  
    This parameter will take an integer value and set the left margin of the main window to the specified number of spaces.
- - `right-margin = <margin-size>`  
+ - `right-margin = \<margin-size\>`  
    This parameter will take an integer value and set the right margin of the main window to the specified number of spaces.
  - `disable-hyphenation`  
    Will completely turn off hyphenation. Useful for languages which are not supported.

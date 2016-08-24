@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2010-2015 Christoph Ender.
+ * Copyright (c) 2010-2016 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 #ifndef cellscreen_h_INCLUDED
 #define cellscreen_h_INCLUDED
 
-#define LIBCELLINTERFACE_VERSION "0.7.11"
+#define LIBCELLINTERFACE_VERSION "0.7.12"
 
 #include "../screen_interface/screen_cell_interface.h"
 

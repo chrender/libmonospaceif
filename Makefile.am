@@ -3,7 +3,7 @@
 #
 # This file is part of fizmo.
 #
-# Copyright (c) 2009-2015 Christoph Ender.
+# Copyright (c) 2009-2016 Christoph Ender.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -61,7 +61,7 @@ install-dev:: libcellif.a
 	echo >>"$(PKGFILE)"
 	echo 'Name: libcellif' >>"$(PKGFILE)"
 	echo 'Description: libcellif' >>"$(PKGFILE)"
-	echo 'Version: 0.7.11' >>"$(PKGFILE)"
+	echo 'Version: 0.7.12' >>"$(PKGFILE)"
 	echo 'Requires: libfizmo >= 0.7.4 ' >>"$(PKGFILE)"
 	echo 'Requires.private:' >>"$(PKGFILE)"
 	echo 'Cflags: -I$(fizmo_build_prefix)/include/fizmo ' >>"$(PKGFILE)"

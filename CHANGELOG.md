@@ -1,6 +1,13 @@
 
 
 
+   **Version 0.7.12**
+
+ - Use tiny-xml-doc-tools for documentation.
+
+---
+
+
    **Version 0.7.11 — July 28, 2016**
 
  - Add list of config options from registered output interface to list of options returned from “get_config_option_names”.
