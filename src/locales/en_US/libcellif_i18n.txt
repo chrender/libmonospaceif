@@ -1,6 +1,6 @@
 More
 Score
 Turns
-libcellinterface version \{0s}.
+libmonospaceinterface version \{0s}.
 Press any key to quit.
 Function call "\{0s}" aborted due to error.

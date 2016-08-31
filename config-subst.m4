@@ -6,6 +6,6 @@
 # The $build_prefix, $build_prefix_cflags and $build_prefix_libs are
 # pre-defined by fizmo-dist.
 
-AC_SUBST([libcellif_CFLAGS], "-I$build_prefix_cflags")
-AC_SUBST([libcellif_LIBS], "-L$build_prefix_libs -lcellif")
+AC_SUBST([libmonospaceif_CFLAGS], "-I$build_prefix_cflags")
+AC_SUBST([libmonospaceif_LIBS], "-L$build_prefix_libs -lmonospaceif")
 

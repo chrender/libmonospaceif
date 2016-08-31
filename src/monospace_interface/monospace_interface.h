@@ -1,5 +1,5 @@
 
-/* libcell_locales.c
+/* monospace_interface.h
  *
  * This file is part of fizmo.
  *
@@ -30,13 +30,22 @@
  */
 
 
-#ifndef libcell_locales_c_INCLUDED 
-#define libcell_locales_c_INCLUDED
+#ifndef monospacescreen_h_INCLUDED
+#define monospacescreen_h_INCLUDED
 
-#include "tools/types.h"
+#define LIBMONOSPACEINTERFACE_VERSION "0.7.12"
 
-z_ucs libcellif_module_name[]
- = { 'l', 'i', 'b', 'c', 'e', 'l', 'l', 'i', 'f', 0};
+#include "../screen_interface/screen_monospace_interface.h"
 
-#endif /* libcell_locales_c_INCLUDED */
+#define MAX_MARGIN_SIZE 100
+#define MAX_MARGIN_AS_STRING_LEN 4
+
+void fizmo_register_screen_monospace_interface(
+    struct z_screen_monospace_interface *screen_monospace_interface);
+void new_monospace_screen_size(int newysize, int newxsize);
+void set_custom_left_monospace_margin(int width);
+void set_custom_right_monospace_margin(int width);
+char *get_screen_monospace_interface_version();
+
+#endif // monospacescreen_h_INCLUDED
 

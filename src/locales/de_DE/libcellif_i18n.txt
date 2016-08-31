@@ -1,6 +1,6 @@
 Mehr
 Punkte
 Züge
-libcellinterface version \{0s}.
+libmonospaceinterface version \{0s}.
 Drücken Sie eine Taste zum Beenden.
 Aufruf der Funktion „\{0s}“ verursachte einen Fehler.

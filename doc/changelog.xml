@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <changelog>
   <change version="0.7.12">
+    <datetime day-of-week="Wed" month="8" day="31" hour="7"
+      minute="48" second="18" timezone="CEST" year="2016"/>
+    <logentry>Renamed “libcellif” to “libmonospaceif”.</logentry>
     <logentry>Use tiny-xml-doc-tools for documentation.</logentry>
   </change>
 

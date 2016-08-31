@@ -37,8 +37,8 @@ LDADD = $(libfizmo_LIBS)
 
 localedir = $(datarootdir)/fizmo/locales
 
-noinst_LIBRARIES = libcellif.a
-libcellif_a_SOURCES = ../locales/libcellif_locales.c cell_interface.c
+noinst_LIBRARIES = libmonospaceif.a
+libmonospaceif_a_SOURCES = ../locales/libmonospaceif_locales.c monospace_interface.c
 
 if ENABLE_TRACING
 AM_CFLAGS += -DENABLE_TRACING=

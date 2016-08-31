@@ -36,10 +36,10 @@ AC_ARG_ENABLE([tracing],
  [enable_tracing=no])
 
 AC_INIT(
- [libcellif],
+ [libmonospaceif],
  [0.7.12],
  fizmo@spellbreaker.org,
- libcellif)
+ libmonospaceif)
 
 
 AC_CONFIG_AUX_DIR([.])
@@ -57,6 +57,6 @@ PKG_CHECK_MODULES([libfizmo], [libfizmo >= 0.7.8])
 AM_CONDITIONAL([ENABLE_TRACING],
                 [test "$enable_tracing" = "yes"])
 
-AC_CONFIG_FILES([Makefile src/cell_interface/Makefile])
+AC_CONFIG_FILES([Makefile src/monospace_interface/Makefile])
 AC_OUTPUT
 

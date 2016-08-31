@@ -1,5 +1,5 @@
 
-/* screen_cell_interface.h
+/* screen_monospace_interface.h
  *
  * This file is part of fizmo.
  *
@@ -30,8 +30,8 @@
  */
 
 
-#ifndef screen_cell_interface_h_INCLUDED
-#define screen_cell_interface_h_INCLUDED
+#ifndef screen_monospace_interface_h_INCLUDED
+#define screen_monospace_interface_h_INCLUDED
 
 #include "tools/types.h"
 
@@ -54,7 +54,7 @@
 #define EVENT_WAS_CODE_PAGE_DOWN    0x400A
 #define EVENT_WAS_CODE_ESC          0x400B
 
-struct z_screen_cell_interface
+struct z_screen_monospace_interface
 {
   void (*goto_yx)(int y, int x);
   void (*z_ucs_output)(z_ucs *z_ucs_output);
@@ -94,5 +94,5 @@ struct z_screen_cell_interface
   // k, -1 on error or -2 in case user cancelled (ESC or similar).
 };
 
-#endif /* screen_cell_interface_h_INCLUDED */
+#endif /* screen_monospace_interface_h_INCLUDED */
 

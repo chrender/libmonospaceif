@@ -1,5 +1,5 @@
 
-/* libcellif_locales.h
+/* libmonospaceif_locales.h
  *
  * This file is part of fizmo.
  *
@@ -30,17 +30,17 @@
  */
 
 
-#ifndef libcellif_locales_h_INCLUDED 
-#define libcellif_locales_h_INCLUDED
+#ifndef libmonospaceif_locales_h_INCLUDED 
+#define libmonospaceif_locales_h_INCLUDED
 
-#define i18n_libcellif_MORE_PROMPT 0
-#define i18n_libcellif_SCORE 1
-#define i18n_libcellif_TURNS 2
-#define i18n_libcellif_LIBCELLINTERFACE_VERSION_P0S 3
-#define i18n_libcellif_PRESS_ANY_KEY_TO_QUIT 4
-#define i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR 5
+#define i18n_libmonospaceif_MORE_PROMPT 0
+#define i18n_libmonospaceif_SCORE 1
+#define i18n_libmonospaceif_TURNS 2
+#define i18n_libmonospaceif_LIBMONOSPACEINTERFACE_VERSION_P0S 3
+#define i18n_libmonospaceif_PRESS_ANY_KEY_TO_QUIT 4
+#define i18n_libmonospaceif_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR 5
 
-extern z_ucs libcellif_module_name[];
+extern z_ucs libmonospaceif_module_name[];
 
-#endif /* libcellif_locales_h_INCLUDED */
+#endif /* libmonospaceif_locales_h_INCLUDED */
 

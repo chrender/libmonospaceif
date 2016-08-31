@@ -36,22 +36,22 @@ localedir = $(datarootdir)/fizmo/locales
 fizmo_build_prefix=$(DEV_BUILD_PREFIX)
 
 PKG_DIR = $(fizmo_build_prefix)/lib/pkgconfig
-PKGFILE = $(PKG_DIR)/libcellif.pc
+PKGFILE = $(PKG_DIR)/libmonospaceif.pc
 
-SUBDIRS = src/cell_interface .
-noinst_LIBRARIES = libcellif.a
+SUBDIRS = src/monospace_interface .
+noinst_LIBRARIES = libmonospaceif.a
 
-libcellif.a::
-	cd src/cell_interface ; make
-	mv src/cell_interface/libcellif.a .
+libmonospaceif.a::
+	cd src/monospace_interface ; make
+	mv src/monospace_interface/libmonospaceif.a .
 
-install-dev:: libcellif.a
+install-dev:: libmonospaceif.a
 	mkdir -p "$(fizmo_build_prefix)"/lib/fizmo
-	mkdir -p "$(fizmo_build_prefix)"/include/fizmo/cell_interface
-	cp src/cell_interface/*.h \
-	  "$(fizmo_build_prefix)"/include/fizmo/cell_interface
-	cp libcellif.a "$(fizmo_build_prefix)"/lib/fizmo
-	cp src/screen_interface/screen_cell_interface.h \
+	mkdir -p "$(fizmo_build_prefix)"/include/fizmo/monospace_interface
+	cp src/monospace_interface/*.h \
+	  "$(fizmo_build_prefix)"/include/fizmo/monospace_interface
+	cp libmonospaceif.a "$(fizmo_build_prefix)"/lib/fizmo
+	cp src/screen_interface/screen_monospace_interface.h \
 	  "$(fizmo_build_prefix)"/include/fizmo/screen_interface
 	mkdir -p "$(PKG_DIR)"
 	echo 'prefix=$(fizmo_build_prefix)' >"$(PKGFILE)"
@@ -59,13 +59,13 @@ install-dev:: libcellif.a
 	echo 'libdir=$${exec_prefix}/lib/fizmo' >>"$(PKGFILE)"
 	echo 'includedir=$${prefix}/include/fizmo' >>"$(PKGFILE)"
 	echo >>"$(PKGFILE)"
-	echo 'Name: libcellif' >>"$(PKGFILE)"
-	echo 'Description: libcellif' >>"$(PKGFILE)"
+	echo 'Name: libmonospaceif' >>"$(PKGFILE)"
+	echo 'Description: libmonospaceif' >>"$(PKGFILE)"
 	echo 'Version: 0.7.12' >>"$(PKGFILE)"
 	echo 'Requires: libfizmo >= 0.7.4 ' >>"$(PKGFILE)"
 	echo 'Requires.private:' >>"$(PKGFILE)"
 	echo 'Cflags: -I$(fizmo_build_prefix)/include/fizmo ' >>"$(PKGFILE)"
-	echo 'Libs: -L$(fizmo_build_prefix)/lib/fizmo -lcellif'  >>"$(PKGFILE)"
+	echo 'Libs: -L$(fizmo_build_prefix)/lib/fizmo -lmonospaceif'  >>"$(PKGFILE)"
 	echo >>"$(PKGFILE)"
 
 install-data-local::
@@ -80,10 +80,10 @@ install-data-local::
 # a - sign. rmdir may fail in clean-dev in case other libs have installed
 # development files, or in case clean-dev has been run before.
 clean-dev::
-	-rm "$(fizmo_build_prefix)/lib/fizmo/libcellif.a"
+	-rm "$(fizmo_build_prefix)/lib/fizmo/libmonospaceif.a"
 	-rmdir "$(fizmo_build_prefix)/lib/fizmo"
-	rm -rf "$(fizmo_build_prefix)/include/fizmo/cell_interface"
-	-rm "$(fizmo_build_prefix)/include/fizmo/screen_interface/screen_cell_interface.h"
+	rm -rf "$(fizmo_build_prefix)/include/fizmo/monospace_interface"
+	-rm "$(fizmo_build_prefix)/include/fizmo/screen_interface/screen_monospace_interface.h"
 	-rmdir "$(fizmo_build_prefix)/include/fizmo/screen_interface"
 	-rmdir "$(fizmo_build_prefix)/include/fizmo"
 	-rmdir "$(fizmo_build_prefix)/include"

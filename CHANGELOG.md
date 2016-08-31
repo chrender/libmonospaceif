@@ -1,8 +1,9 @@
 
 
 
-   **Version 0.7.12**
+   **Version 0.7.12 — August 31, 2016**
 
+ - Renamed “libcellif” to “libmonospaceif”.
  - Use tiny-xml-doc-tools for documentation.
 
 ---

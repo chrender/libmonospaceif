@@ -1,6 +1,6 @@
 
 
-**libcellif configuration option names**  
+**libmonospaceif configuration option names**  
 _2011-05-14_
 
 
@@ -9,7 +9,7 @@ _2011-05-14_
 **Overview**
 
 
-This file lists all available configuration options for libcellif. Please note that other options may be available depending on the interface which libcellif is linked to. The following list shows all the options that the API understands via the "set_configuration_value" function.
+This file lists all available configuration options for libmonospaceif. Please note that other options may be available depending on the interface which libmonospaceif is linked to. The following list shows all the options that the API understands via the "set_configuration_value" function.
 
 ---
 
@@ -20,7 +20,7 @@ Option values may contain variables. Variables start with a dollar sign $ and ar
 
 ---
 
-**List of valid libcellif option names and values**
+**List of valid libmonospaceif option names and values**
 
 
 
