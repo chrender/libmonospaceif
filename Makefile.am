@@ -62,7 +62,7 @@ install-dev:: libmonospaceif.a
 	echo 'Name: libmonospaceif' >>"$(PKGFILE)"
 	echo 'Description: libmonospaceif' >>"$(PKGFILE)"
 	echo 'Version: 0.7.12' >>"$(PKGFILE)"
-	echo 'Requires: libfizmo >= 0.7.4 ' >>"$(PKGFILE)"
+	echo 'Requires: libfizmo >= 0.7.12 ' >>"$(PKGFILE)"
 	echo 'Requires.private:' >>"$(PKGFILE)"
 	echo 'Cflags: -I$(fizmo_build_prefix)/include/fizmo ' >>"$(PKGFILE)"
 	echo 'Libs: -L$(fizmo_build_prefix)/lib/fizmo -lmonospaceif'  >>"$(PKGFILE)"
