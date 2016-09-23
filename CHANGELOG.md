@@ -1,6 +1,13 @@
 
 
 
+   **Version 0.7.13**
+
+ - Improved build system for separate library and interface builds.
+
+---
+
+
    **Version 0.7.12 — August 31, 2016**
 
  - Renamed “libcellif” to “libmonospaceif”.

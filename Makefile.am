@@ -33,10 +33,14 @@ AUTOMAKE_OPTIONS = -Wno-override
 
 localedir = $(datarootdir)/fizmo/locales
 
-fizmo_build_prefix=$(DEV_BUILD_PREFIX)
+if FIZMO_DIST_BUILD
+  dev_prefix=$(FIZMO_DIST_BUILD_PREFIX)
+else
+  dev_prefix=$(prefix)
+endif
 
-PKG_DIR = $(fizmo_build_prefix)/lib/pkgconfig
-PKGFILE = $(PKG_DIR)/libmonospaceif.pc
+pkg_dir = $(DESTDIR)$(dev_prefix)/lib/pkgconfig
+pkgfile = $(pkg_dir)/libmonospaceif.pc
 
 SUBDIRS = src/monospace_interface .
 noinst_LIBRARIES = libmonospaceif.a
@@ -46,27 +50,27 @@ libmonospaceif.a::
 	mv src/monospace_interface/libmonospaceif.a .
 
 install-dev:: libmonospaceif.a
-	mkdir -p "$(fizmo_build_prefix)"/lib/fizmo
-	mkdir -p "$(fizmo_build_prefix)"/include/fizmo/monospace_interface
+	mkdir -p "$(DESTDIR)$(dev_prefix)"/lib/fizmo
+	mkdir -p "$(DESTDIR)$(dev_prefix)"/include/fizmo/monospace_interface
 	cp src/monospace_interface/*.h \
-	  "$(fizmo_build_prefix)"/include/fizmo/monospace_interface
-	cp libmonospaceif.a "$(fizmo_build_prefix)"/lib/fizmo
+	  "$(DESTDIR)$(dev_prefix)"/include/fizmo/monospace_interface
+	cp libmonospaceif.a "$(DESTDIR)$(dev_prefix)"/lib/fizmo
 	cp src/screen_interface/screen_monospace_interface.h \
-	  "$(fizmo_build_prefix)"/include/fizmo/screen_interface
-	mkdir -p "$(PKG_DIR)"
-	echo 'prefix=$(fizmo_build_prefix)' >"$(PKGFILE)"
-	echo 'exec_prefix=$${prefix}' >>"$(PKGFILE)"
-	echo 'libdir=$${exec_prefix}/lib/fizmo' >>"$(PKGFILE)"
-	echo 'includedir=$${prefix}/include/fizmo' >>"$(PKGFILE)"
-	echo >>"$(PKGFILE)"
-	echo 'Name: libmonospaceif' >>"$(PKGFILE)"
-	echo 'Description: libmonospaceif' >>"$(PKGFILE)"
-	echo 'Version: 0.7.12' >>"$(PKGFILE)"
-	echo 'Requires: libfizmo >= 0.7.12 ' >>"$(PKGFILE)"
-	echo 'Requires.private:' >>"$(PKGFILE)"
-	echo 'Cflags: -I$(fizmo_build_prefix)/include/fizmo ' >>"$(PKGFILE)"
-	echo 'Libs: -L$(fizmo_build_prefix)/lib/fizmo -lmonospaceif'  >>"$(PKGFILE)"
-	echo >>"$(PKGFILE)"
+	  "$(DESTDIR)$(dev_prefix)"/include/fizmo/screen_interface
+	mkdir -p "$(pkg_dir)"
+	echo 'prefix=$(dev_prefix)' >"$(pkgfile)"
+	echo 'exec_prefix=$${prefix}' >>"$(pkgfile)"
+	echo 'libdir=$${exec_prefix}/lib/fizmo' >>"$(pkgfile)"
+	echo 'includedir=$${prefix}/include/fizmo' >>"$(pkgfile)"
+	echo >>"$(pkgfile)"
+	echo 'Name: libmonospaceif' >>"$(pkgfile)"
+	echo 'Description: libmonospaceif' >>"$(pkgfile)"
+	echo 'Version: 0.7.13' >>"$(pkgfile)"
+	echo 'Requires: libfizmo >= 0.7.13 ' >>"$(pkgfile)"
+	echo 'Requires.private:' >>"$(pkgfile)"
+	echo 'Cflags: -I$(dev_prefix)/include/fizmo ' >>"$(pkgfile)"
+	echo 'Libs: -L$(dev_prefix)/lib/fizmo -lmonospaceif'  >>"$(pkgfile)"
+	echo >>"$(pkgfile)"
 
 install-data-local::
 	mkdir -p "$(DESTDIR)$(localedir)"
@@ -80,14 +84,11 @@ install-data-local::
 # a - sign. rmdir may fail in clean-dev in case other libs have installed
 # development files, or in case clean-dev has been run before.
 clean-dev::
-	-rm "$(fizmo_build_prefix)/lib/fizmo/libmonospaceif.a"
-	-rmdir "$(fizmo_build_prefix)/lib/fizmo"
-	rm -rf "$(fizmo_build_prefix)/include/fizmo/monospace_interface"
-	-rm "$(fizmo_build_prefix)/include/fizmo/screen_interface/screen_monospace_interface.h"
-	-rmdir "$(fizmo_build_prefix)/include/fizmo/screen_interface"
-	-rmdir "$(fizmo_build_prefix)/include/fizmo"
-	-rmdir "$(fizmo_build_prefix)/include"
-	-rm "$(PKGFILE)"
-	-rmdir "$(PKG_DIR)"
-	-rmdir "$(fizmo_build_prefix)/lib"
+	-rm "$(DESTDIR)$(dev_prefix)/lib/fizmo/libmonospaceif.a"
+	-rmdir "$(DESTDIR)$(dev_prefix)/lib/fizmo"
+	rm -rf "$(DESTDIR)$(dev_prefix)/include/fizmo/monospace_interface"
+	-rm "$(DESTDIR)$(dev_prefix)/include/fizmo/screen_interface/screen_monospace_interface.h"
+	-rmdir "$(DESTDIR)$(dev_prefix)/include/fizmo/screen_interface"
+	-rmdir "$(DESTDIR)$(dev_prefix)/include/fizmo"
+	-rm "$(pkgfile)"
 
