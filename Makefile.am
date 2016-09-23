@@ -55,6 +55,7 @@ install-dev:: libmonospaceif.a
 	cp src/monospace_interface/*.h \
 	  "$(DESTDIR)$(dev_prefix)"/include/fizmo/monospace_interface
 	cp libmonospaceif.a "$(DESTDIR)$(dev_prefix)"/lib/fizmo
+	mkdir -p "$(DESTDIR)$(dev_prefix)"/include/fizmo/screen_interface
 	cp src/screen_interface/screen_monospace_interface.h \
 	  "$(DESTDIR)$(dev_prefix)"/include/fizmo/screen_interface
 	mkdir -p "$(pkg_dir)"
