@@ -1,0 +1,8 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+
+override_dh_auto_install:
+	DESTDIR=$(CURDIR)/debian/libmonospaceif-common $(MAKE) install-data-local
+	DESTDIR=$(CURDIR)/debian/libmonospaceif-dev $(MAKE) install-dev
+
