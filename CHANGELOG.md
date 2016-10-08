@@ -1,7 +1,7 @@
 
 
 
-   **Version 0.7.13**
+   **Version 0.7.13 — October 8, 2016**
 
  - Improved build system for separate library and interface builds.
 
