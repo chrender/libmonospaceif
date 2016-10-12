@@ -12,15 +12,20 @@ Standards-Version: 3.9.8
 Homepage: https://fizmo.spellbreaker.org/
 
 Package: libmonospaceif-common
+Breaks: fizmo-common (<= 0.7.10-2)
 Architecture: all
 Depends: ${misc:Depends}
-Description: Provides localization data for libmonospaceif. This package is required
- by all packages which are utilizing libmonospaceif.
+Description: Provides localization data for libmonospaceif
+ This package is required by all packages which are using the static library
+ provided by the "libmonospaceif-dev" package. Usually there's no need to
+ install this package manually.
 
 Package: libmonospaceif-dev
 Architecture: any
 Depends: libmonospaceif-common,
  ${misc:Depends}
-Description: Interface used to translate raw fizmo Z-Machine output into monospace text
- output events. Used to build the intermediate layer for ncurses-like frontends.
-
+Description: Interface translating libfizmo output into monospaced text
+ This interface will translate all Z-Machine output, including window
+ operations and text output, into simple place-cursor-at-x-y-and-print-text
+ events, which in turn can be used for simple ncurses-like output on
+ terminal-like displays. This is used by the fizmo-ncursesw frontend.
