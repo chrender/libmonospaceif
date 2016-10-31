@@ -1,6 +1,6 @@
 libmonospaceif (0.7.13-1) experimental; urgency=low
 
-  * Initial release.
+  * Initial release (Closes: #842686).
 
- -- Christoph Ender <christoph.ender@spellbreaker.org>  Sun, 9 Oct 2016 00:02:32 +0200
+ -- Christoph Ender <christoph.ender@spellbreaker.org>  Mon, 31 Oct 2016 17:15:00 +0100
 
