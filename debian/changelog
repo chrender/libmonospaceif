@@ -1,6 +1,12 @@
+libmonospaceif (0.7.13-2) experimental; urgency=low
+
+  * Fixed formatting issues.
+
+ -- Christoph Ender <christoph.ender@spellbreaker.org>  Tue, 22 Nov 2016 07:40:00 +0100
+
+
 libmonospaceif (0.7.13-1) experimental; urgency=low
 
   * Initial release (Closes: #842686).
 
  -- Christoph Ender <christoph.ender@spellbreaker.org>  Mon, 31 Oct 2016 17:15:00 +0100
-
