@@ -3,7 +3,7 @@
 #
 # This file is part of fizmo.
 #
-# Copyright (c) 2009-2016 Christoph Ender.
+# Copyright (c) 2009-2017 Christoph Ender.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@ AC_ARG_ENABLE([tracing],
 
 AC_INIT(
  [libmonospaceif],
- [0.7.13],
+ [0.7.14],
  fizmo@spellbreaker.org,
  libmonospaceif)
 
@@ -50,7 +50,7 @@ AM_PROG_AR
 
 AM_CONDITIONAL([FIZMO_DIST_BUILD], [test "x" = ""])
 
-PKG_CHECK_MODULES([libfizmo], [libfizmo >= 0.7.13])
+PKG_CHECK_MODULES([libfizmo], [libfizmo >= 0.7.14])
 
 AM_CONDITIONAL([ENABLE_TRACING],
                 [test "$enable_tracing" = "yes"])

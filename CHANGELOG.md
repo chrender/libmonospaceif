@@ -1,6 +1,13 @@
 
 
 
+   **Version 0.7.14**
+
+ - Adapted to replacement of en_US locale with en_GB from libfizmo.
+
+---
+
+
    **Version 0.7.13 — October 8, 2016**
 
  - Improved build system for separate library and interface builds.
