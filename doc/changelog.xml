@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <changelog>
+  <change version="0.7.14">
+    <logentry>Adapted to replacement of en_US locale with en_GB from libfizmo.</logentry>
+  </change>
+
   <change version="0.7.13">
     <datetime day-of-week="Sat" month="10" day="8" hour="21"
       minute="21" second="15" timezone="CEST" year="2016"/>

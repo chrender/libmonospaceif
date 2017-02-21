@@ -3,7 +3,7 @@
 #
 # This file is part of fizmo.
 #
-# Copyright (c) 2009-2016 Christoph Ender.
+# Copyright (c) 2009-2017 Christoph Ender.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -66,8 +66,8 @@ install-dev:: libmonospaceif.a
 	echo >>"$(pkgfile)"
 	echo 'Name: libmonospaceif' >>"$(pkgfile)"
 	echo 'Description: libmonospaceif' >>"$(pkgfile)"
-	echo 'Version: 0.7.13' >>"$(pkgfile)"
-	echo 'Requires: libfizmo >= 0.7.13 ' >>"$(pkgfile)"
+	echo 'Version: 0.7.14' >>"$(pkgfile)"
+	echo 'Requires: libfizmo >= 0.7.14 ' >>"$(pkgfile)"
 	echo 'Requires.private:' >>"$(pkgfile)"
 	echo 'Cflags: -I$(dev_prefix)/include/fizmo ' >>"$(pkgfile)"
 	echo 'Libs: -L$(dev_prefix)/lib/fizmo -lmonospaceif'  >>"$(pkgfile)"
