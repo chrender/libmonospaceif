@@ -3856,8 +3856,8 @@ $as_echo "no" >&6; }
 fi
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libfizmo" >&5
-$as_echo_n "checking for libfizmo... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libfizmo >= 0.7.14" >&5
+$as_echo_n "checking for libfizmo >= 0.7.14... " >&6; }
 
 if test -n "$libfizmo_CFLAGS"; then
     pkg_cv_libfizmo_CFLAGS="$libfizmo_CFLAGS"
@@ -3897,7 +3897,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -3924,7 +3924,7 @@ Alternatively, you may set the environment variables libfizmo_CFLAGS
 and libfizmo_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
