@@ -1,7 +1,7 @@
 
 
 
-   **Version 0.7.14**
+   **Version 0.7.14 — April 8, 2017**
 
  - Adapted to replacement of en_US locale with en_GB from libfizmo.
 
