@@ -626,7 +626,7 @@ static bool is_picture_font_availiable() {
 }
 
 
-static uint8_t get_screen_height() {
+static uint16_t get_screen_height() {
   if (screen_height < 0)
     exit(-1);
   else
@@ -634,7 +634,7 @@ static uint8_t get_screen_height() {
 }
 
 
-static uint8_t get_screen_width() {
+static uint16_t get_screen_width() {
   if (screen_width < 0)
     exit(-1);
   else
@@ -642,12 +642,12 @@ static uint8_t get_screen_width() {
 }
 
 
-static uint8_t get_screen_height_in_units() {
+static uint16_t get_screen_height_in_units() {
   return get_screen_height();
 }
 
 
-static uint8_t get_screen_width_in_units() {
+static uint16_t get_screen_width_in_units() {
   return get_screen_width();
 }
 
