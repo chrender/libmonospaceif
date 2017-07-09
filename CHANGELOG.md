@@ -1,6 +1,14 @@
 
 
 
+   **Version 0.7.15**
+
+ - Fix superfluous libraries and includes during install when using $DESTDIR, addressing github issue #21.
+ - Fix version descriptor in monospace_interface.h.
+
+---
+
+
    **Version 0.7.14 — April 8, 2017**
 
  - Adapted to replacement of en_US locale with en_GB from libfizmo.

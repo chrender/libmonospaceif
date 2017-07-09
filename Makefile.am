@@ -36,7 +36,7 @@ localedir = $(datarootdir)/fizmo/locales
 if FIZMO_DIST_BUILD
   dev_prefix=$(FIZMO_DIST_BUILD_PREFIX)
 else
-  dev_prefix=$(prefix)
+  dev_prefix=$(DESTDIR)/$(prefix)
 endif
 
 pkg_dir = $(DESTDIR)$(dev_prefix)/lib/pkgconfig
@@ -50,14 +50,14 @@ libmonospaceif.a::
 	mv src/monospace_interface/libmonospaceif.a .
 
 install-dev:: libmonospaceif.a
-	mkdir -p "$(DESTDIR)$(dev_prefix)"/lib/fizmo
-	mkdir -p "$(DESTDIR)$(dev_prefix)"/include/fizmo/monospace_interface
+	mkdir -p "$(dev_prefix)"/lib/fizmo
+	mkdir -p "$(dev_prefix)"/include/fizmo/monospace_interface
 	cp src/monospace_interface/*.h \
-	  "$(DESTDIR)$(dev_prefix)"/include/fizmo/monospace_interface
-	cp libmonospaceif.a "$(DESTDIR)$(dev_prefix)"/lib/fizmo
-	mkdir -p "$(DESTDIR)$(dev_prefix)"/include/fizmo/screen_interface
+	  "$(dev_prefix)"/include/fizmo/monospace_interface
+	cp libmonospaceif.a "$(dev_prefix)"/lib/fizmo
+	mkdir -p "$(dev_prefix)"/include/fizmo/screen_interface
 	cp src/screen_interface/screen_monospace_interface.h \
-	  "$(DESTDIR)$(dev_prefix)"/include/fizmo/screen_interface
+	  "$(dev_prefix)"/include/fizmo/screen_interface
 	mkdir -p "$(pkg_dir)"
 	echo 'prefix=$(dev_prefix)' >"$(pkgfile)"
 	echo 'exec_prefix=$${prefix}' >>"$(pkgfile)"
@@ -66,8 +66,8 @@ install-dev:: libmonospaceif.a
 	echo >>"$(pkgfile)"
 	echo 'Name: libmonospaceif' >>"$(pkgfile)"
 	echo 'Description: libmonospaceif' >>"$(pkgfile)"
-	echo 'Version: 0.7.14' >>"$(pkgfile)"
-	echo 'Requires: libfizmo >= 0.7.14 ' >>"$(pkgfile)"
+	echo 'Version: 0.7.15' >>"$(pkgfile)"
+	echo 'Requires: libfizmo >= 0.7.15 ' >>"$(pkgfile)"
 	echo 'Requires.private:' >>"$(pkgfile)"
 	echo 'Cflags: -I$(dev_prefix)/include/fizmo ' >>"$(pkgfile)"
 	echo 'Libs: -L$(dev_prefix)/lib/fizmo -lmonospaceif'  >>"$(pkgfile)"
@@ -85,11 +85,11 @@ install-data-local::
 # a - sign. rmdir may fail in clean-dev in case other libs have installed
 # development files, or in case clean-dev has been run before.
 clean-dev::
-	-rm "$(DESTDIR)$(dev_prefix)/lib/fizmo/libmonospaceif.a"
-	-rmdir "$(DESTDIR)$(dev_prefix)/lib/fizmo"
-	rm -rf "$(DESTDIR)$(dev_prefix)/include/fizmo/monospace_interface"
-	-rm "$(DESTDIR)$(dev_prefix)/include/fizmo/screen_interface/screen_monospace_interface.h"
-	-rmdir "$(DESTDIR)$(dev_prefix)/include/fizmo/screen_interface"
-	-rmdir "$(DESTDIR)$(dev_prefix)/include/fizmo"
+	-rm "$(dev_prefix)/lib/fizmo/libmonospaceif.a"
+	-rmdir "$(dev_prefix)/lib/fizmo"
+	rm -rf "$(dev_prefix)/include/fizmo/monospace_interface"
+	-rm "$(dev_prefix)/include/fizmo/screen_interface/screen_monospace_interface.h"
+	-rmdir "$(dev_prefix)/include/fizmo/screen_interface"
+	-rmdir "$(dev_prefix)/include/fizmo"
 	-rm "$(pkgfile)"
 
