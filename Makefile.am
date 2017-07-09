@@ -39,7 +39,7 @@ else
   dev_prefix=$(DESTDIR)/$(prefix)
 endif
 
-pkg_dir = $(DESTDIR)$(dev_prefix)/lib/pkgconfig
+pkg_dir = $(dev_prefix)/lib/pkgconfig
 pkgfile = $(pkg_dir)/libmonospaceif.pc
 
 SUBDIRS = src/monospace_interface .
