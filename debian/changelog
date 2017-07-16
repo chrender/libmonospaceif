@@ -1,3 +1,11 @@
+libmonospaceif (0.7.14-2) unstable; urgency=low
+
+  * New standards version 4.0.0.
+  * Switch to unstable.
+
+ -- Christoph Ender <christoph.ender@spellbreaker.org>  Sun, 16 Jul 2017 20:50:00 +0200
+
+
 libmonospaceif (0.7.14-1) experimental; urgency=low
 
   * New upstream version.
