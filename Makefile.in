@@ -337,6 +337,7 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -348,6 +349,8 @@ top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = -Wno-override
 @FIZMO_DIST_BUILD_FALSE@dev_prefix = $(DESTDIR)/$(prefix)
 @FIZMO_DIST_BUILD_TRUE@dev_prefix = $(FIZMO_DIST_BUILD_PREFIX)
+@FIZMO_DIST_BUILD_FALSE@pkg_prefix = $(prefix)
+@FIZMO_DIST_BUILD_TRUE@pkg_prefix = $(FIZMO_DIST_BUILD_PREFIX)
 pkg_dir = $(dev_prefix)/lib/pkgconfig
 pkgfile = $(pkg_dir)/libmonospaceif.pc
 SUBDIRS = src/monospace_interface .
@@ -852,7 +855,7 @@ install-dev:: libmonospaceif.a
 	cp src/screen_interface/screen_monospace_interface.h \
 	  "$(dev_prefix)"/include/fizmo/screen_interface
 	mkdir -p "$(pkg_dir)"
-	echo 'prefix=$(dev_prefix)' >"$(pkgfile)"
+	echo 'prefix=$(pkg_prefix)' >"$(pkgfile)"
 	echo 'exec_prefix=$${prefix}' >>"$(pkgfile)"
 	echo 'libdir=$${exec_prefix}/lib/fizmo' >>"$(pkgfile)"
 	echo 'includedir=$${prefix}/include/fizmo' >>"$(pkgfile)"
@@ -862,8 +865,8 @@ install-dev:: libmonospaceif.a
 	echo 'Version: 0.7.15' >>"$(pkgfile)"
 	echo 'Requires: libfizmo >= 0.7.15 ' >>"$(pkgfile)"
 	echo 'Requires.private:' >>"$(pkgfile)"
-	echo 'Cflags: -I$(dev_prefix)/include/fizmo ' >>"$(pkgfile)"
-	echo 'Libs: -L$(dev_prefix)/lib/fizmo -lmonospaceif'  >>"$(pkgfile)"
+	echo 'Cflags: -I$(pkg_prefix)/include/fizmo ' >>"$(pkgfile)"
+	echo 'Libs: -L$(pkg_prefix)/lib/fizmo -lmonospaceif'  >>"$(pkgfile)"
 	echo >>"$(pkgfile)"
 
 install-data-local::
