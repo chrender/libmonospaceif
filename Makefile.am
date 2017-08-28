@@ -35,8 +35,10 @@ localedir = $(datarootdir)/fizmo/locales
 
 if FIZMO_DIST_BUILD
   dev_prefix=$(FIZMO_DIST_BUILD_PREFIX)
+  pkg_prefix=$(FIZMO_DIST_BUILD_PREFIX)
 else
   dev_prefix=$(DESTDIR)/$(prefix)
+  pkg_prefix=$(prefix)
 endif
 
 pkg_dir = $(dev_prefix)/lib/pkgconfig
@@ -59,7 +61,7 @@ install-dev:: libmonospaceif.a
 	cp src/screen_interface/screen_monospace_interface.h \
 	  "$(dev_prefix)"/include/fizmo/screen_interface
 	mkdir -p "$(pkg_dir)"
-	echo 'prefix=$(dev_prefix)' >"$(pkgfile)"
+	echo 'prefix=$(pkg_prefix)' >"$(pkgfile)"
 	echo 'exec_prefix=$${prefix}' >>"$(pkgfile)"
 	echo 'libdir=$${exec_prefix}/lib/fizmo' >>"$(pkgfile)"
 	echo 'includedir=$${prefix}/include/fizmo' >>"$(pkgfile)"
@@ -69,8 +71,8 @@ install-dev:: libmonospaceif.a
 	echo 'Version: 0.7.15' >>"$(pkgfile)"
 	echo 'Requires: libfizmo >= 0.7.15 ' >>"$(pkgfile)"
 	echo 'Requires.private:' >>"$(pkgfile)"
-	echo 'Cflags: -I$(dev_prefix)/include/fizmo ' >>"$(pkgfile)"
-	echo 'Libs: -L$(dev_prefix)/lib/fizmo -lmonospaceif'  >>"$(pkgfile)"
+	echo 'Cflags: -I$(pkg_prefix)/include/fizmo ' >>"$(pkgfile)"
+	echo 'Libs: -L$(pkg_prefix)/lib/fizmo -lmonospaceif'  >>"$(pkgfile)"
 	echo >>"$(pkgfile)"
 
 install-data-local::
