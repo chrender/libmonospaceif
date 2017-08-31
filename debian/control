@@ -24,6 +24,7 @@ Description: Provides localization data for libmonospaceif
 Package: libmonospaceif-dev
 Architecture: any
 Depends: libmonospaceif-common,
+ libfizmo-dev,
  ${misc:Depends}
 Description: Interface translating libfizmo output into monospaced text
  This interface will translate all Z-Machine output, including window
