@@ -71,8 +71,9 @@ install-dev:: libmonospaceif.a
 	echo 'Version: 0.7.15' >>"$(pkgfile)"
 	echo 'Requires: libfizmo >= 0.7.15 ' >>"$(pkgfile)"
 	echo 'Requires.private:' >>"$(pkgfile)"
-	echo 'Cflags: -I$(pkg_prefix)/include/fizmo ' >>"$(pkgfile)"
-	echo 'Libs: -L$(pkg_prefix)/lib/fizmo -lmonospaceif'  >>"$(pkgfile)"
+	echo 'Cflags: -I$(pkg_prefix)/include/fizmo' >>"$(pkgfile)"
+	echo 'Libs: -L$(pkg_prefix)/lib/fizmo -lmonospaceif' >>"$(pkgfile)"
+	echo 'Libs.private:'  >>"$(pkgfile)"
 	echo >>"$(pkgfile)"
 
 install-data-local::
