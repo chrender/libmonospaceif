@@ -7,11 +7,10 @@ Build-Depends: debhelper (>= 9.0.0),
  automake,
  autoconf,
  pkg-config,
- libfizmo-dev
+ libfizmo-dev (>= 0.7.15)
 Standards-Version: 4.1.0
 Homepage: https://fizmo.spellbreaker.org/
 Vcs-Browser: https://github.com/chrender/libmonospaceif
-Vcs-Git: https://github.com/chrender/libmonospaceif
 
 Package: libmonospaceif-common
 Breaks: fizmo-common (<= 0.7.13)
@@ -25,8 +24,8 @@ Description: Provides localization data for libmonospaceif
 
 Package: libmonospaceif-dev
 Architecture: any
-Depends: libmonospaceif-common,
- libfizmo-dev,
+Depends: libmonospaceif-common (>= 0.7.14),
+ libfizmo-dev (>= 0.7.15),
  ${misc:Depends}
 Description: Interface translating libfizmo output into monospaced text
  This interface will translate all Z-Machine output, including window

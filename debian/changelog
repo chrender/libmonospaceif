@@ -1,3 +1,15 @@
+libmonospaceif (0.7.15-3) unstable; urgency=low
+
+  * Made libmonospaceif-dev require at least version 0.7.14 of
+    libmonospaceif-common due to requirement of the en_GB instead
+    of the en_US hyphenation patterns.
+  * Made libmonospaceif require at least version 0.7.15 of libfizmo-dev
+    due to build process changes.
+  * Removed "Vcs-Git" field from control file.
+
+ -- Christoph Ender <christoph.ender@spellbreaker.org>  Thu, 14 Sep 2017 21:45:00 +0200
+
+
 libmonospaceif (0.7.15-2) unstable; urgency=low
 
   * Switched priority from "extra" to "optional".
