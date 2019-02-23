@@ -70,7 +70,7 @@ install-dev:: libmonospaceif.a
 	echo >>"$(pkgfile)"
 	echo 'Name: libmonospaceif' >>"$(pkgfile)"
 	echo 'Description: libmonospaceif' >>"$(pkgfile)"
-	echo 'Version: 0.7.15' >>"$(pkgfile)"
+	echo 'Version: 0.7.16' >>"$(pkgfile)"
 	echo 'Requires: libfizmo >= 0.7.15 ' >>"$(pkgfile)"
 	echo 'Requires.private:' >>"$(pkgfile)"
 	echo 'Cflags: -I$(pkg_prefix)/include/fizmo' >>"$(pkgfile)"

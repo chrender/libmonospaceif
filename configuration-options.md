@@ -9,14 +9,14 @@ _2011-05-14_
 **Overview**
 
 
-This file lists all available configuration options for libmonospaceif. Please note that other options may be available depending on the interface which libmonospaceif is linked to. The following list shows all the options that the API understands via the "set_configuration_value" function.
+This file lists all available configuration options for libmonospaceif. Please note that other options may be available depending on the interface which libmonospaceif is linked to. The following list shows all the options that the API understands via the "set\_configuration\_value" function.
 
 ---
 
 **Variables**
 
 
-Option values may contain variables. Variables start with a dollar sign $ and are enclosed by parantheses. Example: `$(VARIABLE_NAME)`. The only currently implemented variable is `$(HOME)`, which refers to the current user's home directory.
+Option values may contain variables. Variables start with a dollar sign $ and are enclosed by parantheses. Example: `$(VARIABLE\_NAME)`. The only currently implemented variable is `$(HOME)`, which refers to the current user's home directory.
 
 ---
 

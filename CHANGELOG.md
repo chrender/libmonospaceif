@@ -1,12 +1,19 @@
 
 
 
+   **Version 0.7.16 — Febuary 23, 2019**
+
+ - Fixed underscores in markdown files.
+
+---
+
+
    **Version 0.7.15 — September 3, 2017**
 
  - Fix superfluous libraries and includes during install when using $DESTDIR, addressing github issue #21.
  - Made screen size functions use 16-bit instead of 8-bit values, allowing version 5+ games to work with screen dimensions > 255.
  - Fix possible buffer overflow when writing score and turn data into status line.
- - Fix version descriptor in monospace_interface.h.
+ - Fix version descriptor in monospace\_interface.h.
  - Added missing contributor phrasing to BSD-3 clause. The resulting license now exactly matches the wording used on Github and so also makes the license detection work.
 
 ---
@@ -14,7 +21,7 @@
 
    **Version 0.7.14 — April 8, 2017**
 
- - Adapted to replacement of en_US locale with en_GB from libfizmo.
+ - Adapted to replacement of en\_US locale with en\_GB from libfizmo.
 
 ---
 
@@ -36,7 +43,7 @@
 
    **Version 0.7.11 — July 28, 2016**
 
- - Add list of config options from registered output interface to list of options returned from “get_config_option_names”.
+ - Add list of config options from registered output interface to list of options returned from “get\_config\_option\_names”.
 
 ---
 
@@ -51,7 +58,7 @@
 
    **Version 0.7.9 — May 25, 2014**
 
- - Fixed erase_window and clearing of lines to conform to spec regarding reverse output.
+ - Fixed erase\_window and clearing of lines to conform to spec regarding reverse output.
 
 ---
 
@@ -86,7 +93,7 @@
 
    **Version 0.7.5 — November 30, 2012**
 
- - Implemented delete in read_line and read_char.
+ - Implemented delete in read\_line and read\_char.
  - CTRL-R will now redraw the screen. Contrary to CTRL-L, which refreshes the screen based on the current layout, CTRL-R will reconstruct the latest output based on the output history. This will help to display output which is hidden in case a game clears the screen, writes some text into the top line and then turns on the score line which then overlays the topmost line.
  - Adapted to new command history interface.
 
@@ -102,7 +109,7 @@
 
    **Version 0.7.3 — August 1, 2012**
 
- - Merged Andrew Plotkin's iOS-fizmo changes: Adapted to new function “prompt_for_filename” in screen-interface.
+ - Merged Andrew Plotkin's iOS-fizmo changes: Adapted to new function “prompt\_for\_filename” in screen-interface.
  - Fixed screen interface invocation to not use timeout if not actually required by the game.
 
 ---
@@ -119,7 +126,7 @@
 
  - Fixed missing “override” statments for CFLAGS in Makefiles.
  - Fixed $(DESTDIR) evaluation in config.[default|macports].mk.
- - Adapted Makefiles and configuration to use standard GNU Makefile variables instead of INSTALL_PATH and FIZMO_BIN_DIR.
+ - Adapted Makefiles and configuration to use standard GNU Makefile variables instead of INSTALL\_PATH and FIZMO\_BIN\_DIR.
 
 ---
 

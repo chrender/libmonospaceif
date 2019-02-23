@@ -39,7 +39,7 @@ AC_ARG_ENABLE([tracing],
 
 AC_INIT(
  [libmonospaceif],
- [0.7.15],
+ [0.7.16],
  fizmo@spellbreaker.org,
  libmonospaceif)
 
