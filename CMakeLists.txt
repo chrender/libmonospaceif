@@ -54,12 +54,6 @@ project(libmonospaceif
   DESCRIPTION "fizmo interpreter monospace interface library"
   VERSION 0.9.0)
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBFIZMO REQUIRED libfizmo>=0.8.0)
-
-include_directories(${LIBFIZMO_INCLUDE_DIRS})
-link_directories(${LIBFIZMO_LIBDIR})
-
 ExternalProject_Add(locale_data_preparation
   SOURCE_DIR ${CMAKE_SOURCE_DIR}/src/locales
   BINARY_DIR ${CMAKE_BINARY_DIR}/loacles_build
@@ -69,6 +63,12 @@ ExternalProject_Add(locale_data_preparation
   BUILD_COMMAND make
   INSTALL_COMMAND cmake -E echo "Skipping install step."
   )
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBFIZMO REQUIRED libfizmo>=0.8.0)
+
+include_directories(${LIBFIZMO_INCLUDE_DIRS})
+link_directories(${LIBFIZMO_LIBDIR})
 
 option(ENABLE_TRACING "Enable tracing" OFF)
 if (ENABLE_TRACING)
