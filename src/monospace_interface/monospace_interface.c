@@ -79,6 +79,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdint.h> // FOR INT32_MAX
+#include <errno.h>
 
 #include "tools/i18n.h"
 #include "tools/tracelog.h"
@@ -98,6 +99,7 @@
 #include "monospace_interface.h"
 #include "../screen_interface/screen_monospace_interface.h"
 #include "../locales/libmonospaceif_locales.h"
+#include "../locales/locale_data.h"
 
 
 struct z_window {
@@ -681,7 +683,6 @@ static uint8_t get_total_width_in_pixels_of_text_sent_to_output_stream_3() {
 
 static int parse_config_parameter(char *key, char *value) {
   long long_value;
-  char *endptr;
 
   TRACE_LOG("monospace-if parsing config param key \"%s\", value \"%s\".\n",
       key, value != NULL ? value : "(null)");
@@ -690,10 +691,14 @@ static int parse_config_parameter(char *key, char *value) {
       || (strcasecmp(key, "right-margin") == 0) ) {
     if ( (value == NULL) || (strlen(value) == 0) )
       return -1;
-    long_value = strtol(value, &endptr, 10);
-    free(value);
-    if (*endptr != 0)
+    errno = 0;
+    long_value = strtol(value, NULL, 10);
+    if (errno != 0) {
+      free(value);
       return -1;
+    }
+    TRACE_LOG("Converted value: %ld from \"%s\".\n", long_value, value);
+    free(value);
     if (strcasecmp(key, "left-margin") == 0)
       set_custom_left_monospace_margin(long_value);
     else
@@ -3431,6 +3436,13 @@ void fizmo_register_screen_monospace_interface(
   {
     TRACE_LOG("Registering screen monospace interface at %p.\n",
         new_screen_monospace_interface);
+
+    TRACE_LOG("Initializing monospaceif locales.\n");
+    init_libmonospaceif_locales();
+
+    TRACE_LOG("Registering monospaceif locale module.\n");
+    register_locale_module(
+      locale_module_libmonospaceif.module_name, &locale_module_libmonospaceif);
 
     screen_monospace_interface = new_screen_monospace_interface;
     set_configuration_value("enable-font3-conversion", "true");
