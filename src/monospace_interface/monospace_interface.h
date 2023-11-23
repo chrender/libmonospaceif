@@ -35,7 +35,7 @@
 #ifndef monospacescreen_h_INCLUDED
 #define monospacescreen_h_INCLUDED
 
-#define LIBMONOSPACEINTERFACE_VERSION "0.7.16"
+#define LIBMONOSPACEINTERFACE_VERSION "0.9.0"
 
 #include "../screen_interface/screen_monospace_interface.h"
 
