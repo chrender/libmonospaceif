@@ -36,17 +36,26 @@
 
   ---
 
+  This is libmonospaceif's main buildfile. There is another one location
+  in "src/locales" which is invoked by this one. The one in "src/locales"
+  will pre-process the locales into a ".c" source file, so that they can
+  be "hard-compiled" into libmonospaceif, which solves a lot of problem
+  with handling of external files and makes debugging in IDEs much simpler.
 
-
-  This is libmonospaceif's main buildfile. […]
+  Compile-time options are described individually below.
 
 ]]
 
 
 cmake_minimum_required(VERSION 3.10)
 
+# Enable external commands so it's possible to build the tools which will
+# in turn create the ".h" and ".c" files required for the main build first.
 include(ExternalProject)
+
+# Enable CMake-based evaluation of pkg-config files.
 include(FindPkgConfig)
+
 
 project(libmonospaceif
   LANGUAGES C
@@ -54,6 +63,15 @@ project(libmonospaceif
   DESCRIPTION "fizmo interpreter monospace interface library"
   VERSION 0.9.0)
 
+
+# Don't prepend libname with "lib". This is helpful in order to be able
+# to distinguish project "fizmo" - the distribution build - from "libfizmo" -
+# the core library and have the CMake project names set accordingly.
+set(CMAKE_STATIC_LIBRARY_PREFIX "")
+
+
+# Invoke build and run tool for processing of locales into "locale_data.c"
+# so that this file can be used in this build.
 ExternalProject_Add(locale_data_preparation
   SOURCE_DIR ${CMAKE_SOURCE_DIR}/src/locales
   BINARY_DIR ${CMAKE_BINARY_DIR}/loacles_build
@@ -65,37 +83,59 @@ ExternalProject_Add(locale_data_preparation
   )
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBFIZMO REQUIRED libfizmo>=0.8.0)
 
-include_directories(${LIBFIZMO_INCLUDE_DIRS})
-link_directories(${LIBFIZMO_LIBDIR})
 
+# We need libfizmo >= 0.9.
+pkg_check_modules(LIBFIZMO REQUIRED libfizmo>=0.9.0)
+
+
+# Enabling tracing will cause fizmo to write a really, really large amount
+# of debug data to disk while running. Furthermore, after every single
+# write, fizmo will invoke an fsync(), meaning that performance will
+# quite suffer. This is only useful for debugging and should be disabled
+# in all other cases.
 option(ENABLE_TRACING "Enable tracing" OFF)
 if (ENABLE_TRACING)
   add_definitions(-DENABLE_TRACING)
 endif()
 
+
+# Should always be off at the moment, since the debugger isn't
+# implemented.
 option(ENABLE_DEBUGGER "Enable debugger" OFF)
 if (ENABLE_DEBUGGER)
   add_definitions(-DENABLE_DEBUGGER)
 endif()
 
+
+# In case of a distribution build, this should be set to fizmo's main
+# version number, so it's possible to distinguish libfizmo's version
+# from the main fizmo version.
 option(FIZMO_DIST_VERSION "Set fizmo-dist version" OFF)
 if (FIZMO_DIST_VERSION)
   add_definitions(-DFIZMO_DIST_VERSION=${FIZMO_DIST_VERSION})
 endif()
 
+
+# Store filenames of all files-to-be-compiled in "C_FILES".
 set (MyCSources
   src/monospace_interface/monospace_interface.c
   src/locales/libmonospaceif_locales.c
   src/locales/locale_data.c
   src/locales/locale_data.h)
 
-add_library(monospaceif ${MyCSources})
+
+# Tell CMake we'd like to create a library named "libmonospaceif" with the
+# given ".c" files.
+add_library(libmonospaceif ${MyCSources})
+target_include_directories(libmonospaceif PUBLIC ${LIBFIZMO_INCLUDE_DIRS})
+target_link_directories(libmonospaceif PUBLIC ${LIBFIZMO_LIBDIR})
+
 
 #install(TARGETS libmonospaceif)
 # PUBLIC_HEADER cannot be used for TARGETS fizmo, since it doesn't keep
 # the directory tree and installs all *.h flat into "include/". So:
+
 
 install(DIRECTORY "${PROJECT_SOURCE_DIR}/src/" # source directory
   DESTINATION "include" # target directory
@@ -103,12 +143,15 @@ install(DIRECTORY "${PROJECT_SOURCE_DIR}/src/" # source directory
   PATTERN "*.h" # select header files
 )
 
-install(TARGETS monospaceif)
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
-  DESTINATION "lib/pkgconfig")
+install(TARGETS libmonospaceif)
+
 
 set(pc_libs_private)
 set(pc_req_private)
 configure_file(src/libmonospaceif.pc.in libmonospaceif.pc @ONLY)
+
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
+  DESTINATION "lib/pkgconfig")
 
