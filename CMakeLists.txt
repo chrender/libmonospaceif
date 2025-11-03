@@ -7,7 +7,7 @@
 
   ---
 
-  Copyright (c) 2010-2023 Christoph Ender.
+  Copyright (c) 2010-2025 Christoph Ender.
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -64,10 +64,17 @@ project(libmonospaceif
   VERSION 0.9.0)
 
 
-# Don't prepend libname with "lib". This is helpful in order to be able
-# to distinguish project "fizmo" - the distribution build - from "libfizmo" -
-# the core library and have the CMake project names set accordingly.
+# Don't prepend libname with "lib". This will make it possible to use the
+# name defined in project() above via "${PROJECT_NAME}" without having
+# to alternate between "libmonospaceif" and "monospaceif" in various
+# statements. Furthermore, it will allow distinguishing between "libfizmo"
+# and "fizmo" projects and have "CMAKE_STATIC_LIBRARY_PREFIX" set to the
+# same value in all fizmo-related projects.
 set(CMAKE_STATIC_LIBRARY_PREFIX "")
+
+
+# Create position-independent code.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 
 # Invoke build and run tool for processing of locales into "locale_data.c"
@@ -118,7 +125,7 @@ endif()
 
 
 # Store filenames of all files-to-be-compiled in "C_FILES".
-set (MyCSources
+set (c_sources
   src/monospace_interface/monospace_interface.c
   src/locales/libmonospaceif_locales.c
   src/locales/locale_data.c
@@ -127,7 +134,7 @@ set (MyCSources
 
 # Tell CMake we'd like to create a library named "libmonospaceif" with the
 # given ".c" files.
-add_library(libmonospaceif ${MyCSources})
+add_library(libmonospaceif ${c_sources})
 target_include_directories(libmonospaceif PUBLIC ${LIBFIZMO_INCLUDE_DIRS})
 target_link_directories(libmonospaceif PUBLIC ${LIBFIZMO_LIBDIR})
 
