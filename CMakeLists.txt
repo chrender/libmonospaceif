@@ -49,6 +49,7 @@
 
 cmake_minimum_required(VERSION 3.10)
 
+
 # Enable external commands so it's possible to build the tools which will
 # in turn create the ".h" and ".c" files required for the main build first.
 include(ExternalProject)
@@ -135,8 +136,9 @@ set (c_sources
 # Tell CMake we'd like to create a library named "libmonospaceif" with the
 # given ".c" files.
 add_library(libmonospaceif ${c_sources})
-target_include_directories(libmonospaceif PUBLIC ${LIBFIZMO_INCLUDE_DIRS})
-target_link_directories(libmonospaceif PUBLIC ${LIBFIZMO_LIBDIR})
+
+target_include_directories(libmonospaceif PUBLIC
+  ${LIBFIZMO_INCLUDE_DIRS})
 
 
 #install(TARGETS libmonospaceif)
