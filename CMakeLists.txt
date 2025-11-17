@@ -62,7 +62,7 @@ project(libmonospaceif
   LANGUAGES C
   HOMEPAGE_URL https://fizmo.spellbreaker.org
   DESCRIPTION "fizmo interpreter monospace interface library"
-  VERSION 0.9.0)
+  VERSION 0.8.0)
 
 
 # Don't prepend libname with "lib". This will make it possible to use the
@@ -93,8 +93,8 @@ ExternalProject_Add(locale_data_preparation
 find_package(PkgConfig REQUIRED)
 
 
-# We need libfizmo >= 0.9.
-pkg_check_modules(LIBFIZMO REQUIRED libfizmo>=0.9.0)
+# We need libfizmo >= 0.8.
+pkg_check_modules(LIBFIZMO REQUIRED libfizmo>=0.8.0)
 
 
 # Enabling tracing will cause fizmo to write a really, really large amount
